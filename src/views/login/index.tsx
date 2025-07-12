@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../hooks/useAuth";
 import {
   Box,
   Button,
@@ -10,23 +11,42 @@ import {
   Container,
   Paper,
   Stack,
+  Alert,
 } from "@mui/material";
 
 export default function LoginView() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // ログイン処理をここに追加（例：認証API呼び出し）
-    console.log("ログイン処理実行", { email, password });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("メールアドレスとパスワードを入力してください");
+      return;
+    }
 
-    // ホームページに遷移
-    router.push("/home");
+    setLoading(true);
+    setError("");
+
+    try {
+      const success = await login(email, password);
+
+      if (success) {
+        router.push("/home");
+      } else {
+        setError("ログインに失敗しました");
+      }
+    } catch (err) {
+      setError("ログイン処理中にエラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = () => {
-    // サインアップページに遷移
     router.push("/signup");
   };
 
@@ -45,6 +65,12 @@ export default function LoginView() {
           <Typography variant="h4" component="h1" gutterBottom align="center">
             ログイン
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <Stack spacing={3}>
             <TextField
@@ -72,9 +98,10 @@ export default function LoginView() {
               variant="contained"
               size="large"
               onClick={handleLogin}
+              disabled={loading}
               sx={{ mt: 2 }}
             >
-              ログイン
+              {loading ? "ログイン中..." : "ログイン"}
             </Button>
 
             <Button
@@ -83,6 +110,7 @@ export default function LoginView() {
               size="large"
               onClick={handleSignUp}
               color="secondary"
+              disabled={loading}
             >
               新規登録
             </Button>

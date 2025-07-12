@@ -1,5 +1,10 @@
-import Home from "@/views/home";
+import ProtectedRoute from "../../components/ProtectedRoute";
+import Home from "../../views/home";
 
 export default function HomePage() {
-  return <Home />;
+  return (
+    <ProtectedRoute>
+      <Home />
+    </ProtectedRoute>
+  );
 }
