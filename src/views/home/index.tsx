@@ -1,9 +1,16 @@
+"use client";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
-import { Stack, Box } from "@mui/material";
+import { Stack, Box, Button } from "@mui/material";
 import React from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { useRouter } from "next/navigation";
+import Body from "./components/body";
 
 export default function Home() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
   return (
     <Box
       sx={{
@@ -12,11 +19,8 @@ export default function Home() {
         minHeight: "100vh",
       }}
     >
-      <Header title="ホームページへようこそ" />
-
-      <Box sx={{ flex: 1, padding: 2 }}>
-        <p>ボディーを実装</p>
-      </Box>
+      <Header title="TagLater" userName={user?.name ?? ""} />
+      <Body />
 
       <Footer />
     </Box>
