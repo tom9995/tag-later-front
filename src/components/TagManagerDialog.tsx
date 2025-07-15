@@ -70,10 +70,12 @@ const TagManager: React.FC<TagManagerProps> = ({
         setTags(response.data);
       } else {
         setError(response.error || "タグの取得に失敗しました");
+        setTags([]); // エラー時は空の配列をセット
       }
     } catch (error) {
       console.error("Failed to load tags:", error);
       setError("タグの取得中にエラーが発生しました");
+      setTags([]); // エラー時は空の配列をセット
     } finally {
       setLoading(false);
     }

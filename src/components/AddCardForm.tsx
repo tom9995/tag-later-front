@@ -46,9 +46,12 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
       const response = await apiService.getTags();
       if (response.success) {
         setAvailableTags(response.data);
+      } else {
+        setAvailableTags([]); // エラー時は空の配列をセット
       }
     } catch (error) {
       console.error("Failed to load tags:", error);
+      setAvailableTags([]); // エラー時は空の配列をセット
     }
   };
 

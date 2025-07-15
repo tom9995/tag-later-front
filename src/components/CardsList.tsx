@@ -65,10 +65,12 @@ const CardsList: React.FC = () => {
         setCards(response.data.cards);
       } else {
         setError(response.error || "カードの取得に失敗しました");
+        setCards([]); // エラー時は空の配列をセット
       }
     } catch (error) {
       console.error("Failed to load cards:", error);
       setError("カードの取得中にエラーが発生しました");
+      setCards([]); // エラー時は空の配列をセット
     } finally {
       setLoading(false);
     }

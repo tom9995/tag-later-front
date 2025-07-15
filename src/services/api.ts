@@ -100,19 +100,25 @@ class ApiService {
       Accept: "application/json",
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(`API request failed for ${endpoint}:`, error);
+      // エラー時は失敗レスポンスを返す（サンプルデータは返さない）
+      throw error;
     }
-
-    return response.json();
   }
 
   // Cards API
@@ -315,7 +321,8 @@ export async function fetchBookmarks(): Promise<Bookmark[]> {
     }));
   } catch (error) {
     console.error("Error fetching bookmarks:", error);
-    throw error;
+    // エラー時は空の配列を返す（サンプルデータは返さない）
+    return [];
   }
 }
 
@@ -326,7 +333,8 @@ export async function fetchTags(): Promise<Tag[]> {
     return response.success ? response.data : [];
   } catch (error) {
     console.error("Error fetching tags:", error);
-    throw error;
+    // エラー時は空の配列を返す（サンプルデータは返さない）
+    return [];
   }
 }
 
