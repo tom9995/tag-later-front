@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Container,
   Typography,
@@ -16,10 +17,13 @@ import {
   Collapse,
   Alert,
   CircularProgress,
-  Card,
-  CardContent,
-  Chip,
-  Stack,
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Menu,
 } from "@mui/material";
 import {
   Add,
@@ -31,6 +35,10 @@ import {
   Favorite,
   Article,
   LocalOffer,
+  Logout,
+  AccountCircle,
+  MoreVert,
+  Close,
 } from "@mui/icons-material";
 import { Card as CardType, apiService } from "@/services/api";
 import CardItem from "@/components/CardItem";
@@ -38,11 +46,17 @@ import AddCardForm from "@/components/AddCardForm";
 import TagManagerDialog from "@/components/TagManagerDialog";
 
 const CardsList: React.FC = () => {
+  const { user, signOut } = useAuth();
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     is_read: undefined as boolean | undefined,
@@ -78,11 +92,12 @@ const CardsList: React.FC = () => {
 
   useEffect(() => {
     loadCards();
-  }, [filters]);
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCardAdded = (newCard: CardType) => {
     setCards((prev) => [newCard, ...prev]);
     setShowAddForm(false);
+    setShowAddModal(false);
   };
 
   const handleCardUpdated = (updatedCard: CardType) => {
@@ -99,8 +114,53 @@ const CardsList: React.FC = () => {
     setFilters((prev) => ({ ...prev, search: e.target.value }));
   };
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (
+    key: string,
+    value: string | boolean | undefined
+  ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+      setUserMenuAnchor(null);
+    }
+  };
+
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
+  };
+
+  const getUserDisplayName = () => {
+    // XSS対策：HTMLエスケープとサニタイゼーション
+    const safeName = user?.user_metadata?.name?.replace(/[<>&"']/g, (match) => {
+      const escapeMap: { [key: string]: string } = {
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&#x27;",
+      };
+      return escapeMap[match];
+    });
+
+    // 文字数制限（20文字まで）
+    const displayName =
+      safeName && safeName.trim().length > 0
+        ? safeName.slice(0, 20)
+        : "ユーザー";
+
+    return displayName;
   };
 
   const stats = {
@@ -172,7 +232,7 @@ const CardsList: React.FC = () => {
                   後で読む記事を美しく整理
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                 <Button
                   variant="outlined"
                   startIcon={<LocalOffer />}
@@ -194,7 +254,7 @@ const CardsList: React.FC = () => {
                 <Button
                   variant="contained"
                   startIcon={<Add />}
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  onClick={() => setShowAddModal(true)}
                   sx={{
                     borderRadius: 3,
                     px: 3,
@@ -206,20 +266,24 @@ const CardsList: React.FC = () => {
                     },
                   }}
                 >
-                  {showAddForm ? "フォームを閉じる" : "新しいカード"}
+                  新しいカード
                 </Button>
+                {/* User Menu Icon */}
+                <IconButton
+                  onClick={handleUserMenuOpen}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    color: "#667eea",
+                    "&:hover": {
+                      backgroundColor: "rgba(103, 126, 234, 0.1)",
+                    },
+                  }}
+                >
+                  <MoreVert />
+                </IconButton>
               </Box>
             </Box>
-
-            {/* Add Card Form */}
-            <Collapse in={showAddForm}>
-              <Box sx={{ mt: 3 }}>
-                <AddCardForm
-                  onCardAdded={handleCardAdded}
-                  onCancel={() => setShowAddForm(false)}
-                />
-              </Box>
-            </Collapse>
           </Paper>
         </Box>
 
@@ -566,7 +630,7 @@ const CardsList: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => setShowAddForm(true)}
+              onClick={() => setShowAddModal(true)}
               size="large"
               sx={{
                 borderRadius: 3,
@@ -623,10 +687,121 @@ const CardsList: React.FC = () => {
             },
             transition: "all 0.3s ease",
           }}
-          onClick={() => setShowAddForm(true)}
+          onClick={() => setShowAddModal(true)}
         >
           <Add sx={{ fontSize: 30 }} />
         </Fab>
+
+        {/* User Menu */}
+        <Menu
+          anchorEl={userMenuAnchor}
+          open={Boolean(userMenuAnchor)}
+          onClose={handleUserMenuClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              borderRadius: "12px",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              minWidth: "200px",
+            },
+          }}
+          transformOrigin={{ horizontal: "right", vertical: "top" }}
+          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        >
+          <Box
+            sx={{ px: 2, py: 1, borderBottom: "1px solid rgba(0, 0, 0, 0.1)" }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <AccountCircle sx={{ color: "#667eea" }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {getUserDisplayName()}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {user?.email}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 1 }}>
+            <Button
+              fullWidth
+              startIcon={<Logout />}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              sx={{
+                justifyContent: "flex-start",
+                color: "#f44336",
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: "rgba(244, 67, 54, 0.05)",
+                },
+                "&:disabled": {
+                  color: "rgba(0, 0, 0, 0.26)",
+                },
+              }}
+            >
+              {isLoggingOut ? "ログアウト中..." : "ログアウト"}
+            </Button>
+          </Box>
+        </Menu>
+
+        {/* Add Card Modal */}
+        <Dialog
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "20px",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pb: 1,
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              新しいカードを追加
+            </Typography>
+            <IconButton
+              onClick={() => setShowAddModal(false)}
+              sx={{
+                color: "rgba(0, 0, 0, 0.5)",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.05)",
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ p: 0 }}>
+            <AddCardForm
+              onCardAdded={handleCardAdded}
+              onCancel={() => setShowAddModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Tag Manager Dialog */}
         <TagManagerDialog

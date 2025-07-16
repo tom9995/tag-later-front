@@ -1,10 +1,10 @@
-import ProtectedRoute from "../../components/ProtectedRoute";
-import Home from "../../views/home";
+import CardsList from "@/components/CardsList";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function HomePage() {
   return (
     <ProtectedRoute>
-      <Home />
+      <CardsList />
     </ProtectedRoute>
   );
 }

@@ -1,5 +1,10 @@
-import CardsList from '@/components/CardsList';
+import CardsList from "@/components/CardsList";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CardsPage() {
-  return <CardsList />;
+  return (
+    <ProtectedRoute>
+      <CardsList />
+    </ProtectedRoute>
+  );
 }
