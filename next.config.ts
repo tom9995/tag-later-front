@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
     images: {
       unoptimized: true,
     },
+    // 静的エクスポート時のRSC問題を回避
+    experimental: {
+      ppr: false,
+    },
   }),
 
   // GitHub Pages用のbasePath設定（リポジトリ名に合わせて調整）

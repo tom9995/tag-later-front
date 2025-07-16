@@ -43,18 +43,26 @@ function validateEnvironmentVariables() {
   const key = getSupabaseAnonKey();
 
   if (!url || url === fallbackUrl) {
-    console.error("❌ NEXT_PUBLIC_SUPABASE_URL environment variable is missing or using placeholder");
+    console.error(
+      "❌ NEXT_PUBLIC_SUPABASE_URL environment variable is missing or using placeholder"
+    );
     console.error("Please ensure GitHub Secrets are properly configured:");
     console.error("- Repository Settings > Secrets and variables > Actions");
-    console.error("- Add NEXT_PUBLIC_SUPABASE_URL with your Supabase project URL");
+    console.error(
+      "- Add NEXT_PUBLIC_SUPABASE_URL with your Supabase project URL"
+    );
     return false;
   }
 
   if (!key || key === fallbackKey) {
-    console.error("❌ NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is missing or using placeholder");
+    console.error(
+      "❌ NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is missing or using placeholder"
+    );
     console.error("Please ensure GitHub Secrets are properly configured:");
     console.error("- Repository Settings > Secrets and variables > Actions");
-    console.error("- Add NEXT_PUBLIC_SUPABASE_ANON_KEY with your Supabase anon key");
+    console.error(
+      "- Add NEXT_PUBLIC_SUPABASE_ANON_KEY with your Supabase anon key"
+    );
     return false;
   }
 
