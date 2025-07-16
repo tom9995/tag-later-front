@@ -1,4 +1,5 @@
 import ClientThemeProvider from "./ClientThemeProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
   title: "TagLater App",
@@ -13,7 +14,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <ClientThemeProvider>{children}</ClientThemeProvider>
+        <AuthProvider>
+          <ClientThemeProvider>{children}</ClientThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
