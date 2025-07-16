@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>TagLater App</title>
+    <script>
+      // GitHub Pages SPA用のリダイレクト処理
+      // .txt?_rsc= のリクエストを適切なHTMLページにリダイレクト
+      (function () {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+
+        // RSCリクエストの場合、基本ページにリダイレクト
+        var path = location.pathname;
+        if (path.includes(".txt") && location.search.includes("_rsc=")) {
+          // /tag-later-front/signup.txt?_rsc=... → /tag-later-front/signup/
+          var newPath = path.replace(".txt", "/");
+          history.replaceState(null, null, newPath);
+          location.href = newPath;
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="loading">Loading...</div>
+    <script>
+      // ページの自動リロード
+      setTimeout(function () {
+        location.reload();
+      }, 100);
+    </script>
+  </body>
+</html>

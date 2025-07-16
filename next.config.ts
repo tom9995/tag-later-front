@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
     experimental: {
       ppr: false,
     },
+    // より確実なSPA設定
+    generateEtags: false,
+    poweredByHeader: false,
   }),
 
   // GitHub Pages用のbasePath設定（リポジトリ名に合わせて調整）
