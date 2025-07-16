@@ -71,6 +71,12 @@ jobs:
           ls -la dist/
           echo "dist directory size:"
           du -sh dist/
+          echo "Checking specific files:"
+          find dist/ -name "*.html" | head -10
+          echo "Checking for signup files:"
+          find dist/ -name "*signup*"
+          echo "Checking directory structure:"
+          tree dist/ -L 3 || find dist/ -type d | head -20
           echo "Checking for environment variables in built files:"
           if grep -r "placeholder.supabase.co" dist/; then
             echo "❌ WARNING: Placeholder URLs found in built files!"
