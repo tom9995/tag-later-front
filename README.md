@@ -102,28 +102,30 @@ npm run dev
 #### 設定手順
 
 1. **リポジトリ設定**
+
    ```bash
    # リポジトリをGitHubにプッシュ
    git push origin main
    ```
 
 2. **GitHub Secrets の設定**
-   
+
    GitHub リポジトリの `Settings` > `Secrets and variables` > `Actions` で以下を設定：
-   
-   - `NEXT_PUBLIC_SUPABASE_URL`: あなたのSupabaseプロジェクトURL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: あなたのSupabase Anonymous Key
+
+   - `NEXT_PUBLIC_SUPABASE_URL`: あなたの Supabase プロジェクト URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: あなたの Supabase Anonymous Key
 
 3. **GitHub Pages の有効化**
-   
+
    リポジトリの `Settings` > `Pages` で：
+
    - Source: `GitHub Actions` を選択
 
 4. **デプロイの確認**
-   
-   mainブランチにプッシュすると自動的にデプロイされます。
-   
-   アクセスURL: `https://[username].github.io/tag-later-front/`
+
+   main ブランチにプッシュすると自動的にデプロイされます。
+
+   アクセス URL: `https://[username].github.io/tag-later-front/`
 
 #### ローカルでのプロダクションビルドテスト
 

@@ -139,16 +139,19 @@ const CardsList: React.FC = () => {
 
   const getUserDisplayName = () => {
     // XSS対策：HTMLエスケープとサニタイゼーション
-    const safeName = user?.user_metadata?.name?.replace(/[<>&"']/g, (match: string) => {
-      const escapeMap: { [key: string]: string } = {
-        "<": "&lt;",
-        ">": "&gt;",
-        "&": "&amp;",
-        '"': "&quot;",
-        "'": "&#x27;",
-      };
-      return escapeMap[match];
-    });
+    const safeName = user?.user_metadata?.name?.replace(
+      /[<>&"']/g,
+      (match: string) => {
+        const escapeMap: { [key: string]: string } = {
+          "<": "&lt;",
+          ">": "&gt;",
+          "&": "&amp;",
+          '"': "&quot;",
+          "'": "&#x27;",
+        };
+        return escapeMap[match];
+      }
+    );
 
     // 文字数制限（20文字まで）
     const displayName =

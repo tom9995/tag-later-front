@@ -1,17 +1,17 @@
 import type { NextConfig } from "next";
 
-const isProd = process.env.NODE_ENV === 'production';
-const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+const isProd = process.env.NODE_ENV === "production";
+const isGitHubPages = process.env.GITHUB_PAGES === "true";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  
+
   // GitHub Pages用の設定
   ...(isGitHubPages && {
-    output: 'export',
+    output: "export",
     trailingSlash: true,
     skipTrailingSlashRedirect: true,
-    distDir: 'dist',
+    distDir: "dist",
     images: {
       unoptimized: true,
     },
@@ -19,8 +19,8 @@ const nextConfig: NextConfig = {
 
   // GitHub Pages用のbasePath設定（リポジトリ名に合わせて調整）
   ...(isGitHubPages && {
-    basePath: '/tag-later-front',
-    assetPrefix: '/tag-later-front/',
+    basePath: "/tag-later-front",
+    assetPrefix: "/tag-later-front/",
   }),
 
   // ヘッダー設定は静的エクスポート時には無効なので条件付きで設定
