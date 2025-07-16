@@ -5,37 +5,48 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // 開発環境とプロダクション環境での詳細なエラーメッセージ
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === "development";
+const isStaticBuild = process.env.GITHUB_PAGES === "true";
 
-if (!supabaseUrl) {
-  const errorMessage = isDevelopment 
+// 静的ビルド時はダミー値を使用（実際には使用されない）
+const fallbackUrl = "https://placeholder.supabase.co";
+const fallbackKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxMjM0NTYsImV4cCI6MTk2MDY5OTQ1Nn0.placeholder";
+
+const finalUrl = supabaseUrl || (isStaticBuild ? fallbackUrl : "");
+const finalKey = supabaseAnonKey || (isStaticBuild ? fallbackKey : "");
+
+if (!finalUrl && !isStaticBuild) {
+  const errorMessage = isDevelopment
     ? "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check your .env.local file."
     : "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check GitHub repository secrets.";
   throw new Error(errorMessage);
 }
 
-if (!supabaseAnonKey) {
+if (!finalKey && !isStaticBuild) {
   const errorMessage = isDevelopment
     ? "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check your .env.local file."
     : "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check GitHub repository secrets.";
   throw new Error(errorMessage);
 }
 
-// URL形式の検証
-try {
-  new URL(supabaseUrl);
-} catch {
-  throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid URL");
+// URL形式の検証（静的ビルド時はスキップ）
+if (!isStaticBuild && finalUrl) {
+  try {
+    new URL(finalUrl);
+  } catch {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid URL");
+  }
 }
 
-// Supabaseキーの基本的な検証（JWT形式かどうか）
-if (!supabaseAnonKey.startsWith("eyJ")) {
+// Supabaseキーの基本的な検証（JWT形式かどうか）（静的ビルド時はスキップ）
+if (!isStaticBuild && finalKey && !finalKey.startsWith("eyJ")) {
   throw new Error(
     "NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be invalid (should be a JWT)"
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(finalUrl!, finalKey!);
 
 // Database型定義
 export interface Database {

@@ -2,7 +2,6 @@
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { Provider as JotaiProvider } from "jotai";
 
 const theme = createTheme({
   palette: {
@@ -24,11 +23,9 @@ export default function ClientThemeProvider({
   children: React.ReactNode;
 }) {
   return (
-    <JotaiProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
-    </JotaiProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
   );
 }
