@@ -4,20 +4,27 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// 開発環境とプロダクション環境での詳細なエラーメッセージ
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 if (!supabaseUrl) {
-  throw new Error("NEXT_PUBLIC_SUPABASE_URL environment variable is required");
+  const errorMessage = isDevelopment 
+    ? "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check your .env.local file."
+    : "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check GitHub repository secrets.";
+  throw new Error(errorMessage);
 }
 
 if (!supabaseAnonKey) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required"
-  );
+  const errorMessage = isDevelopment
+    ? "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check your .env.local file."
+    : "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check GitHub repository secrets.";
+  throw new Error(errorMessage);
 }
 
 // URL形式の検証
 try {
   new URL(supabaseUrl);
-} catch (error) {
+} catch {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid URL");
 }
 

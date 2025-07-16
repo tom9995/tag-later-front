@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:github": "cross-env GITHUB_PAGES=true next build",
+    "build:github:win": "set GITHUB_PAGES=true && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "cross-env GITHUB_PAGES=true next build"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -23,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "typescript": "^5"
