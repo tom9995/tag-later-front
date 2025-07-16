@@ -10,7 +10,8 @@ const isStaticBuild = process.env.GITHUB_PAGES === "true";
 
 // 静的ビルド時はダミー値を使用（実際には使用されない）
 const fallbackUrl = "https://placeholder.supabase.co";
-const fallbackKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxMjM0NTYsImV4cCI6MTk2MDY5OTQ1Nn0.placeholder";
+const fallbackKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxMjM0NTYsImV4cCI6MTk2MDY5OTQ1Nn0.placeholder";
 
 const finalUrl = supabaseUrl || (isStaticBuild ? fallbackUrl : "");
 const finalKey = supabaseAnonKey || (isStaticBuild ? fallbackKey : "");
