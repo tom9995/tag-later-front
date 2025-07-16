@@ -17,11 +17,9 @@ import {
   Collapse,
   Alert,
   CircularProgress,
-  Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   IconButton,
   Menu,
 } from "@mui/material";
@@ -50,7 +48,6 @@ const CardsList: React.FC = () => {
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [showTagManager, setShowTagManager] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
@@ -96,7 +93,6 @@ const CardsList: React.FC = () => {
 
   const handleCardAdded = (newCard: CardType) => {
     setCards((prev) => [newCard, ...prev]);
-    setShowAddForm(false);
     setShowAddModal(false);
   };
 
@@ -143,7 +139,7 @@ const CardsList: React.FC = () => {
 
   const getUserDisplayName = () => {
     // XSS対策：HTMLエスケープとサニタイゼーション
-    const safeName = user?.user_metadata?.name?.replace(/[<>&"']/g, (match) => {
+    const safeName = user?.user_metadata?.name?.replace(/[<>&"']/g, (match: string) => {
       const escapeMap: { [key: string]: string } = {
         "<": "&lt;",
         ">": "&gt;",

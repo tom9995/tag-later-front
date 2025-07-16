@@ -92,3 +92,47 @@ npm run dev
 - **レスポンシブデザイン**: モバイル・デスクトップ対応
 - **モダン UI**: Glassmorphism デザイン
 - **リアルタイム更新**: 即座の状態反映
+
+## 📦 デプロイ
+
+### GitHub Pages へのデプロイ
+
+このプロジェクトは GitHub Pages への自動デプロイに対応しています。
+
+#### 設定手順
+
+1. **リポジトリ設定**
+   ```bash
+   # リポジトリをGitHubにプッシュ
+   git push origin main
+   ```
+
+2. **GitHub Secrets の設定**
+   
+   GitHub リポジトリの `Settings` > `Secrets and variables` > `Actions` で以下を設定：
+   
+   - `NEXT_PUBLIC_SUPABASE_URL`: あなたのSupabaseプロジェクトURL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: あなたのSupabase Anonymous Key
+
+3. **GitHub Pages の有効化**
+   
+   リポジトリの `Settings` > `Pages` で：
+   - Source: `GitHub Actions` を選択
+
+4. **デプロイの確認**
+   
+   mainブランチにプッシュすると自動的にデプロイされます。
+   
+   アクセスURL: `https://[username].github.io/tag-later-front/`
+
+#### ローカルでのプロダクションビルドテスト
+
+```bash
+# GitHub Pages用のビルド
+npm run build:github
+
+# ビルド結果の確認
+npm run export
+```
+
+詳細な設定手順は `GITHUB_PAGES_SETUP.md` を参照してください。
