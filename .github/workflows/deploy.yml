@@ -48,7 +48,7 @@ jobs:
             echo "❌ NEXT_PUBLIC_SUPABASE_URL is not set!"
             echo "Using fallback URL for build only"
           fi
-          
+
           if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
             echo "✅ NEXT_PUBLIC_SUPABASE_ANON_KEY is configured"
             echo "Key starts with: $(echo '${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}' | cut -c1-20)..."
