@@ -38,6 +38,25 @@ jobs:
           echo "Directory contents:"
           ls -la
 
+      - name: Check environment variables
+        run: |
+          echo "Checking Supabase configuration..."
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
+            echo "✅ NEXT_PUBLIC_SUPABASE_URL is configured"
+            echo "URL starts with: $(echo '${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}' | cut -c1-20)..."
+          else
+            echo "❌ NEXT_PUBLIC_SUPABASE_URL is not set!"
+            echo "Using fallback URL for build only"
+          fi
+          
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+            echo "✅ NEXT_PUBLIC_SUPABASE_ANON_KEY is configured"
+            echo "Key starts with: $(echo '${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}' | cut -c1-20)..."
+          else
+            echo "❌ NEXT_PUBLIC_SUPABASE_ANON_KEY is not set!"
+            echo "Using fallback key for build only"
+          fi
+
       - name: Build
         run: npm run build:github
         env:
@@ -52,6 +71,12 @@ jobs:
           ls -la dist/
           echo "dist directory size:"
           du -sh dist/
+          echo "Checking for environment variables in built files:"
+          if grep -r "placeholder.supabase.co" dist/; then
+            echo "❌ WARNING: Placeholder URLs found in built files!"
+          else
+            echo "✅ No placeholder URLs found in built files"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
