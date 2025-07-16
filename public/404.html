@@ -5,32 +5,51 @@
     <title>TagLater App</title>
     <script>
       // GitHub Pages SPA用のリダイレクト処理
-      // .txt?_rsc= のリクエストを適切なHTMLページにリダイレクト
       (function () {
+        console.log("404 handler triggered for:", location.href);
+
+        var path = location.pathname;
+        var search = location.search;
+        var basePath = "/tag-later-front";
+
+        // RSCリクエストの検出と処理
+        if (search.includes("_rsc=") || search.includes("rsc=")) {
+          console.log("RSC request detected, redirecting...");
+
+          // .txtを削除してHTMLページへリダイレクト
+          var cleanPath = path.replace(".txt", "");
+
+          // ベースパスを確保
+          if (!cleanPath.startsWith(basePath)) {
+            cleanPath = basePath + cleanPath;
+          }
+
+          // トレイリングスラッシュを追加
+          if (!cleanPath.endsWith("/") && cleanPath !== basePath) {
+            cleanPath += "/";
+          }
+
+          console.log("Redirecting to:", cleanPath);
+
+          // 即座にリダイレクト（RSCリクエストの場合）
+          window.location.replace(cleanPath);
+          return;
+        }
+
+        // 通常のSPAルーティング
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
         if (redirect && redirect !== location.href) {
           history.replaceState(null, null, redirect);
-        }
-
-        // RSCリクエストの場合、基本ページにリダイレクト
-        var path = location.pathname;
-        if (path.includes(".txt") && location.search.includes("_rsc=")) {
-          // /tag-later-front/signup.txt?_rsc=... → /tag-later-front/signup/
-          var newPath = path.replace(".txt", "/");
-          history.replaceState(null, null, newPath);
-          location.href = newPath;
+          location.reload();
         }
       })();
     </script>
   </head>
   <body>
-    <div id="loading">Loading...</div>
-    <script>
-      // ページの自動リロード
-      setTimeout(function () {
-        location.reload();
-      }, 100);
-    </script>
+    <div style="text-align: center; margin-top: 50px">
+      <h2>Loading...</h2>
+      <p>Redirecting to the correct page...</p>
+    </div>
   </body>
 </html>
