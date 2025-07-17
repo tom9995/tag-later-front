@@ -603,40 +603,72 @@ const CardsList: React.FC = () => {
         </Accordion>
 
         {/* Modern Filters */}
-        <Paper
+        <Accordion
           elevation={0}
           sx={{
-            p: { xs: 2, sm: 4 },
             mb: 4,
             background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(20px)",
-            borderRadius: 4,
+            borderRadius: "16px !important",
             border: "1px solid rgba(255, 255, 255, 0.2)",
+            "&:before": {
+              display: "none",
+            },
+            "& .MuiAccordionSummary-root": {
+              borderRadius: "16px",
+              "&.Mui-expanded": {
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              },
+            },
+            "& .MuiAccordionDetails-root": {
+              borderBottomLeftRadius: "16px",
+              borderBottomRightRadius: "16px",
+            },
           }}
         >
-          <Typography
-            variant="h5"
-            gutterBottom
+          <AccordionSummary
+            expandIcon={
+              <ExpandMore
+                sx={{
+                  color: "#667eea",
+                  fontSize: { xs: 20, sm: 24 },
+                }}
+              />
+            }
             sx={{
-              display: "flex",
-              alignItems: "center",
-              fontWeight: 600,
-              color: "#333",
-              mb: 3,
+              p: { xs: 2, sm: 3 },
+              "& .MuiAccordionSummary-content": {
+                margin: "8px 0",
+              },
             }}
           >
-            <FilterList sx={{ mr: 2, color: "#667eea" }} />
-            フィルター & 検索
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: { xs: 2, sm: 3 },
-              flexWrap: "wrap",
-              alignItems: "center",
-              flexDirection: { xs: "column", sm: "row" },
-            }}
-          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <FilterList
+                sx={{ color: "#667eea", fontSize: { xs: 20, sm: 24 } }}
+              />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  color: "#333",
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
+                }}
+              >
+                フィルター & 検索
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 2, sm: 3 },
+                flexWrap: "wrap",
+                alignItems: "center",
+                flexDirection: { xs: "column", sm: "row" },
+              }}
+            >
             {/* Search */}
             <TextField
               label="検索"
@@ -775,8 +807,9 @@ const CardsList: React.FC = () => {
                 <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
               </Select>
             </FormControl>
-          </Box>
-        </Paper>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
 
         {/* Error Message */}
         <Collapse in={!!error}>
