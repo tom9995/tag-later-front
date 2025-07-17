@@ -25,6 +25,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Add,
@@ -50,6 +52,8 @@ import TagManagerDialog from "@/components/TagManagerDialog";
 
 const CardsList: React.FC = () => {
   const { user, signOut } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -925,7 +929,7 @@ const CardsList: React.FC = () => {
           onClose={() => setShowAddModal(false)}
           maxWidth="md"
           fullWidth
-          fullScreen={{ xs: true, sm: false }}
+          fullScreen={isMobile}
           PaperProps={{
             sx: {
               borderRadius: { xs: 0, sm: "20px" },
