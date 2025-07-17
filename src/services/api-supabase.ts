@@ -44,7 +44,7 @@ export interface Collection {
 
 export interface CreateCardData {
   title: string;
-  url: string;
+  url?: string;
   description?: string;
   thumbnail_url?: string;
   favicon_url?: string;

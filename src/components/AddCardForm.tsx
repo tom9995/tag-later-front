@@ -28,7 +28,7 @@ interface AddCardFormProps {
 const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
   const [formData, setFormData] = useState<CreateCardData>({
     title: "",
-    url: "",
+    url: undefined,
     description: "",
     is_favorite: false,
   });
@@ -79,7 +79,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
         // フォームをリセット
         setFormData({
           title: "",
-          url: "",
+          url: undefined,
           description: "",
           is_favorite: false,
         });
@@ -96,7 +96,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
   };
 
   const handleUrlParse = async () => {
-    if (!formData.url.trim()) return;
+    if (!formData.url?.trim()) return;
 
     try {
       setIsSubmitting(true);
@@ -201,7 +201,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
               fullWidth
               label="URL"
               type="url"
-              value={formData.url}
+              value={formData.url || ""}
               onChange={handleInputChange("url")}
               placeholder="https://example.com/article"
               variant="outlined"
@@ -235,7 +235,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
             <Button
               variant="outlined"
               onClick={handleUrlParse}
-              disabled={isSubmitting || !formData.url.trim()}
+              disabled={isSubmitting || !formData.url?.trim()}
               startIcon={<Link />}
               sx={{
                 minWidth: "120px",
