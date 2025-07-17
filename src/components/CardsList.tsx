@@ -56,6 +56,7 @@ const CardsList: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -70,10 +71,24 @@ const CardsList: React.FC = () => {
     sort_by: "saved_at",
     sort_order: "desc" as "asc" | "desc",
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const loadCards = async () => {
+  // デバウンス用のuseEffect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, search: searchTerm }));
+    }, 500); // 500ms待機
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const loadCards = async (isSearch = false) => {
     try {
-      setLoading(true);
+      if (isSearch) {
+        setSearchLoading(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await apiService.getCards({
@@ -92,12 +107,17 @@ const CardsList: React.FC = () => {
       setError("カードの取得中にエラーが発生しました");
       setCards([]); // エラー時は空の配列をセット
     } finally {
-      setLoading(false);
+      if (isSearch) {
+        setSearchLoading(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadCards();
+    const isInitialLoad = loading;
+    loadCards(!isInitialLoad);
   }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCardAdded = (newCard: CardType) => {
@@ -106,9 +126,24 @@ const CardsList: React.FC = () => {
   };
 
   const handleCardUpdated = (updatedCard: CardType) => {
-    setCards((prev) =>
-      prev.map((card) => (card.id === updatedCard.id ? updatedCard : card))
-    );
+    setCards((prev) => {
+      // フィルターに基づいてカードを表示すべきかチェック
+      const shouldShowCard =
+        (filters.is_read === undefined ||
+          filters.is_read === updatedCard.is_read) &&
+        (filters.is_favorite === undefined ||
+          filters.is_favorite === updatedCard.is_favorite);
+
+      if (shouldShowCard) {
+        // フィルター条件に合致する場合は更新
+        return prev.map((card) =>
+          card.id === updatedCard.id ? updatedCard : card
+        );
+      } else {
+        // フィルター条件に合致しない場合はリストから除外
+        return prev.filter((card) => card.id !== updatedCard.id);
+      }
+    });
   };
 
   const handleCardDeleted = (cardId: string) => {
@@ -116,7 +151,7 @@ const CardsList: React.FC = () => {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters((prev) => ({ ...prev, search: e.target.value }));
+    setSearchTerm(e.target.value);
   };
 
   const handleFilterChange = (
@@ -199,17 +234,17 @@ const CardsList: React.FC = () => {
     >
       <Container
         maxWidth="lg"
-        sx={{ pt: { xs: 2, sm: 4 }, px: { xs: 1, sm: 3 } }}
+        sx={{ pt: { xs: 1, sm: 2 }, px: { xs: 1, sm: 3 } }}
       >
         {/* Modern Header */}
-        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
           <Paper
             elevation={0}
             sx={{
               background: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(20px)",
               borderRadius: 4,
-              p: { xs: 2, sm: 4 },
+              p: { xs: 1.5, sm: 2.5 },
               border: "1px solid rgba(255, 255, 255, 0.2)",
             }}
           >
@@ -219,8 +254,8 @@ const CardsList: React.FC = () => {
                 justifyContent: "space-between",
                 alignItems: { xs: "flex-start", sm: "center" },
                 flexDirection: { xs: "column", sm: "row" },
-                gap: { xs: 2, sm: 0 },
-                mb: 3,
+                gap: { xs: 1.5, sm: 0 },
+                mb: { xs: 1.5, sm: 2 },
               }}
             >
               <Box>
@@ -237,16 +272,6 @@ const CardsList: React.FC = () => {
                   }}
                 >
                   TagLater
-                </Typography>
-                <Typography
-                  variant="h6"
-                  color="text.secondary"
-                  sx={{
-                    fontWeight: 300,
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
-                  }}
-                >
-                  後で読む記事を美しく整理
                 </Typography>
               </Box>
               <Box
@@ -320,175 +345,6 @@ const CardsList: React.FC = () => {
             </Box>
           </Paper>
         </Box>
-
-        {/* Modern Filters */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, sm: 4 },
-            mb: 4,
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            borderRadius: 4,
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-          }}
-        >
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              fontWeight: 600,
-              color: "#333",
-              mb: 3,
-            }}
-          >
-            <FilterList sx={{ mr: 2, color: "#667eea" }} />
-            フィルター & 検索
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: { xs: 2, sm: 3 },
-              flexWrap: "wrap",
-              alignItems: "center",
-              flexDirection: { xs: "column", sm: "row" },
-            }}
-          >
-            {/* Search */}
-            <TextField
-              label="検索"
-              value={filters.search}
-              onChange={handleSearchChange}
-              placeholder="タイトルや説明で検索"
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: "#667eea" }} />,
-              }}
-              sx={{
-                width: { xs: "100%", sm: 280 },
-                minWidth: { xs: "100%", sm: 280 },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 3,
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-
-            {/* Read Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                読書状態
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_read === undefined
-                    ? ""
-                    : filters.is_read.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_read",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="読書状態"
-                sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
-                }}
-              >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="false">未読</MenuItem>
-                <MenuItem value="true">既読</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Favorite Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                お気に入り
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_favorite === undefined
-                    ? ""
-                    : filters.is_favorite.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_favorite",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="お気に入り"
-                sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
-                }}
-              >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="true">お気に入り</MenuItem>
-                <MenuItem value="false">通常</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Sort */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 200 },
-                minWidth: { xs: "100%", sm: 200 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                並び順
-              </InputLabel>
-              <Select
-                value={`${filters.sort_by}_${filters.sort_order}`}
-                onChange={(e) => {
-                  const [sort_by, sort_order] = e.target.value.split("_");
-                  handleFilterChange("sort_by", sort_by);
-                  handleFilterChange("sort_order", sort_order);
-                }}
-                label="並び順"
-                sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
-                }}
-              >
-                <MenuItem value="saved_at_desc">保存日時（新しい順）</MenuItem>
-                <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
-                <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
-                <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </Paper>
 
         {/* Modern Stats Dashboard */}
         <Accordion
@@ -745,10 +601,184 @@ const CardsList: React.FC = () => {
             </Box>
           </AccordionDetails>
         </Accordion>
-      </Container>
 
-      {/* Error Message */}
-      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 } }}>
+        {/* Modern Filters */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2, sm: 4 },
+            mb: 4,
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 4,
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+          }}
+        >
+          <Typography
+            variant="h5"
+            gutterBottom
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              fontWeight: 600,
+              color: "#333",
+              mb: 3,
+            }}
+          >
+            <FilterList sx={{ mr: 2, color: "#667eea" }} />
+            フィルター & 検索
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: { xs: 2, sm: 3 },
+              flexWrap: "wrap",
+              alignItems: "center",
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
+            {/* Search */}
+            <TextField
+              label="検索"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="タイトルや説明で検索"
+              InputProps={{
+                startAdornment: searchLoading ? (
+                  <CircularProgress
+                    size={20}
+                    sx={{ mr: 1, color: "#667eea" }}
+                  />
+                ) : (
+                  <Search sx={{ mr: 1, color: "#667eea" }} />
+                ),
+              }}
+              sx={{
+                width: { xs: "100%", sm: 280 },
+                minWidth: { xs: "100%", sm: 280 },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 3,
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#667eea",
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#667eea",
+                },
+              }}
+            />
+
+            {/* Read Status */}
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 160 },
+                minWidth: { xs: "100%", sm: 160 },
+              }}
+            >
+              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                読書状態
+              </InputLabel>
+              <Select
+                value={
+                  filters.is_read === undefined
+                    ? ""
+                    : filters.is_read.toString()
+                }
+                onChange={(e) =>
+                  handleFilterChange(
+                    "is_read",
+                    e.target.value === ""
+                      ? undefined
+                      : e.target.value === "true"
+                  )
+                }
+                label="読書状態"
+                sx={{
+                  borderRadius: 3,
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#667eea",
+                  },
+                }}
+              >
+                <MenuItem value="">すべて</MenuItem>
+                <MenuItem value="false">未読</MenuItem>
+                <MenuItem value="true">既読</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Favorite Status */}
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 160 },
+                minWidth: { xs: "100%", sm: 160 },
+              }}
+            >
+              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                お気に入り
+              </InputLabel>
+              <Select
+                value={
+                  filters.is_favorite === undefined
+                    ? ""
+                    : filters.is_favorite.toString()
+                }
+                onChange={(e) =>
+                  handleFilterChange(
+                    "is_favorite",
+                    e.target.value === ""
+                      ? undefined
+                      : e.target.value === "true"
+                  )
+                }
+                label="お気に入り"
+                sx={{
+                  borderRadius: 3,
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#667eea",
+                  },
+                }}
+              >
+                <MenuItem value="">すべて</MenuItem>
+                <MenuItem value="true">お気に入り</MenuItem>
+                <MenuItem value="false">通常</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Sort */}
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 200 },
+                minWidth: { xs: "100%", sm: 200 },
+              }}
+            >
+              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                並び順
+              </InputLabel>
+              <Select
+                value={`${filters.sort_by}_${filters.sort_order}`}
+                onChange={(e) => {
+                  const [sort_by, sort_order] = e.target.value.split("_");
+                  handleFilterChange("sort_by", sort_by);
+                  handleFilterChange("sort_order", sort_order);
+                }}
+                label="並び順"
+                sx={{
+                  borderRadius: 3,
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#667eea",
+                  },
+                }}
+              >
+                <MenuItem value="saved_at_desc">保存日時（新しい順）</MenuItem>
+                <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
+                <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
+                <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Paper>
+
+        {/* Error Message */}
         <Collapse in={!!error}>
           <Alert
             severity="error"
