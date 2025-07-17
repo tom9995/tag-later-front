@@ -70,6 +70,16 @@ const CardsList: React.FC = () => {
     sort_by: "saved_at",
     sort_order: "desc" as "asc" | "desc",
   });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // デバウンス用のuseEffect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, search: searchTerm }));
+    }, 500); // 500ms待機
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const loadCards = async () => {
     try {
@@ -116,7 +126,7 @@ const CardsList: React.FC = () => {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters((prev) => ({ ...prev, search: e.target.value }));
+    setSearchTerm(e.target.value);
   };
 
   const handleFilterChange = (
@@ -359,7 +369,7 @@ const CardsList: React.FC = () => {
             {/* Search */}
             <TextField
               label="検索"
-              value={filters.search}
+              value={searchTerm}
               onChange={handleSearchChange}
               placeholder="タイトルや説明で検索"
               InputProps={{
@@ -745,10 +755,8 @@ const CardsList: React.FC = () => {
             </Box>
           </AccordionDetails>
         </Accordion>
-      </Container>
 
-      {/* Error Message */}
-      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 } }}>
+        {/* Error Message */}
         <Collapse in={!!error}>
           <Alert
             severity="error"

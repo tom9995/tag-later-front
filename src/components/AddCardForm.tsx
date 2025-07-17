@@ -58,8 +58,8 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.url.trim()) {
-      setError("タイトルとURLは必須項目です");
+    if (!formData.title.trim()) {
+      setError("タイトルは必須項目です");
       return;
     }
 
@@ -70,7 +70,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
       const response = await apiService.createCard({
         ...formData,
         title: formData.title.trim(),
-        url: formData.url.trim(),
+        url: formData.url.trim() || undefined,
         description: formData.description?.trim() || undefined,
       });
 
@@ -199,7 +199,6 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
             <TextField
               fullWidth
-              required
               label="URL"
               type="url"
               value={formData.url}
