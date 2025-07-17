@@ -22,6 +22,9 @@ import {
   DialogContent,
   IconButton,
   Menu,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import {
   Add,
@@ -37,6 +40,8 @@ import {
   AccountCircle,
   MoreVert,
   Close,
+  ExpandMore,
+  BarChart,
 } from "@mui/icons-material";
 import { Card as CardType, apiService } from "@/services/api";
 import CardItem from "@/components/CardItem";
@@ -188,16 +193,19 @@ const CardsList: React.FC = () => {
         pb: 4,
       }}
     >
-      <Container maxWidth="lg" sx={{ pt: 4 }}>
+      <Container
+        maxWidth="lg"
+        sx={{ pt: { xs: 2, sm: 4 }, px: { xs: 1, sm: 3 } }}
+      >
         {/* Modern Header */}
-        <Box sx={{ mb: 6 }}>
+        <Box sx={{ mb: { xs: 4, sm: 6 } }}>
           <Paper
             elevation={0}
             sx={{
               background: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(20px)",
               borderRadius: 4,
-              p: 4,
+              p: { xs: 2, sm: 4 },
               border: "1px solid rgba(255, 255, 255, 0.2)",
             }}
           >
@@ -205,7 +213,9 @@ const CardsList: React.FC = () => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: { xs: "flex-start", sm: "center" },
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 2, sm: 0 },
                 mb: 3,
               }}
             >
@@ -219,6 +229,7 @@ const CardsList: React.FC = () => {
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     mb: 1,
+                    fontSize: { xs: "2rem", sm: "3rem" },
                   }}
                 >
                   TagLater
@@ -226,19 +237,32 @@ const CardsList: React.FC = () => {
                 <Typography
                   variant="h6"
                   color="text.secondary"
-                  sx={{ fontWeight: 300 }}
+                  sx={{
+                    fontWeight: 300,
+                    fontSize: { xs: "1rem", sm: "1.25rem" },
+                  }}
                 >
                   後で読む記事を美しく整理
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: { xs: 1, sm: 2 },
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  width: { xs: "100%", sm: "auto" },
+                  justifyContent: { xs: "space-between", sm: "flex-end" },
+                }}
+              >
                 <Button
                   variant="outlined"
                   startIcon={<LocalOffer />}
                   onClick={() => setShowTagManager(true)}
                   sx={{
                     borderRadius: 3,
-                    px: 3,
+                    px: { xs: 2, sm: 3 },
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
                     borderColor: "#667eea",
                     color: "#667eea",
                     "&:hover": {
@@ -248,7 +272,10 @@ const CardsList: React.FC = () => {
                     },
                   }}
                 >
-                  タグ管理
+                  <Box sx={{ display: { xs: "none", sm: "inline" } }}>
+                    タグ管理
+                  </Box>
+                  <Box sx={{ display: { xs: "inline", sm: "none" } }}>タグ</Box>
                 </Button>
                 <Button
                   variant="contained"
@@ -256,7 +283,8 @@ const CardsList: React.FC = () => {
                   onClick={() => setShowAddModal(true)}
                   sx={{
                     borderRadius: 3,
-                    px: 3,
+                    px: { xs: 2, sm: 3 },
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
                     background: "linear-gradient(45deg, #667eea, #764ba2)",
                     boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
                     "&:hover": {
@@ -265,14 +293,17 @@ const CardsList: React.FC = () => {
                     },
                   }}
                 >
-                  新しいカード
+                  <Box sx={{ display: { xs: "none", sm: "inline" } }}>
+                    新しいカード
+                  </Box>
+                  <Box sx={{ display: { xs: "inline", sm: "none" } }}>追加</Box>
                 </Button>
                 {/* User Menu Icon */}
                 <IconButton
                   onClick={handleUserMenuOpen}
                   size="small"
                   sx={{
-                    ml: 1,
+                    ml: { xs: 0, sm: 1 },
                     color: "#667eea",
                     "&:hover": {
                       backgroundColor: "rgba(103, 126, 234, 0.1)",
@@ -290,7 +321,7 @@ const CardsList: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 4,
+            p: { xs: 2, sm: 4 },
             mb: 4,
             background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(20px)",
@@ -315,9 +346,10 @@ const CardsList: React.FC = () => {
           <Box
             sx={{
               display: "flex",
-              gap: 3,
+              gap: { xs: 2, sm: 3 },
               flexWrap: "wrap",
               alignItems: "center",
+              flexDirection: { xs: "column", sm: "row" },
             }}
           >
             {/* Search */}
@@ -330,7 +362,8 @@ const CardsList: React.FC = () => {
                 startAdornment: <Search sx={{ mr: 1, color: "#667eea" }} />,
               }}
               sx={{
-                minWidth: 280,
+                width: { xs: "100%", sm: 280 },
+                minWidth: { xs: "100%", sm: 280 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 3,
                   "&.Mui-focused fieldset": {
@@ -344,7 +377,12 @@ const CardsList: React.FC = () => {
             />
 
             {/* Read Status */}
-            <FormControl sx={{ minWidth: 160 }}>
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 160 },
+                minWidth: { xs: "100%", sm: 160 },
+              }}
+            >
               <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
                 読書状態
               </InputLabel>
@@ -377,7 +415,12 @@ const CardsList: React.FC = () => {
             </FormControl>
 
             {/* Favorite Status */}
-            <FormControl sx={{ minWidth: 160 }}>
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 160 },
+                minWidth: { xs: "100%", sm: 160 },
+              }}
+            >
               <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
                 お気に入り
               </InputLabel>
@@ -410,7 +453,12 @@ const CardsList: React.FC = () => {
             </FormControl>
 
             {/* Sort */}
-            <FormControl sx={{ minWidth: 200 }}>
+            <FormControl
+              sx={{
+                width: { xs: "100%", sm: 200 },
+                minWidth: { xs: "100%", sm: 200 },
+              }}
+            >
               <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
                 並び順
               </InputLabel>
@@ -439,143 +487,264 @@ const CardsList: React.FC = () => {
         </Paper>
 
         {/* Modern Stats Dashboard */}
-        <Paper
+        <Accordion
           elevation={0}
           sx={{
-            p: 4,
             mb: 4,
             background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(20px)",
-            borderRadius: 4,
+            borderRadius: "16px !important",
             border: "1px solid rgba(255, 255, 255, 0.2)",
+            "&:before": {
+              display: "none",
+            },
+            "& .MuiAccordionSummary-root": {
+              borderRadius: "16px",
+              "&.Mui-expanded": {
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              },
+            },
+            "& .MuiAccordionDetails-root": {
+              borderBottomLeftRadius: "16px",
+              borderBottomRightRadius: "16px",
+            },
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{ mb: 3, fontWeight: 600, color: "#333" }}
-          >
-            📊 統計情報
-          </Typography>
-          <Box
+          <AccordionSummary
+            expandIcon={
+              <ExpandMore
+                sx={{
+                  color: "#667eea",
+                  fontSize: { xs: 20, sm: 24 },
+                }}
+              />
+            }
             sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 3,
+              p: { xs: 2, sm: 3 },
+              "& .MuiAccordionSummary-content": {
+                margin: "8px 0",
+              },
             }}
           >
-            <Box
-              sx={{
-                textAlign: "center",
-                p: 3,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
-              }}
-            >
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                {stats.total}
-              </Typography>
-              <Box
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <BarChart
+                sx={{ color: "#667eea", fontSize: { xs: 20, sm: 24 } }}
+              />
+              <Typography
+                variant="h6"
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  fontWeight: 600,
+                  color: "#333",
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
                 }}
               >
-                <Article sx={{ mr: 1 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  総カード数
-                </Typography>
-              </Box>
+                統計情報
+              </Typography>
             </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(4, 1fr)",
+                },
+                gap: { xs: 2, sm: 3 },
+              }}
+            >
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 3,
+                  borderRadius: 3,
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "white",
+                  boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
+                }}
+              >
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1,
+                    fontSize: { xs: "1.5rem", sm: "3rem" },
+                  }}
+                >
+                  {stats.total}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 0, sm: 1 },
+                  }}
+                >
+                  <Article
+                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: "0.75rem", sm: "1rem" },
+                      textAlign: "center",
+                    }}
+                  >
+                    総カード数
+                  </Typography>
+                </Box>
+              </Box>
 
-            <Box
-              sx={{
-                textAlign: "center",
-                p: 3,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
-                color: "white",
-                boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
-              }}
-            >
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                {stats.read}
-              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  textAlign: "center",
+                  p: 3,
+                  borderRadius: 3,
+                  background:
+                    "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
+                  color: "white",
+                  boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
                 }}
               >
-                <Visibility sx={{ mr: 1 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  既読
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1,
+                    fontSize: { xs: "1.5rem", sm: "3rem" },
+                  }}
+                >
+                  {stats.read}
                 </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 0, sm: 1 },
+                  }}
+                >
+                  <Visibility
+                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: "0.75rem", sm: "1rem" },
+                      textAlign: "center",
+                    }}
+                  >
+                    既読
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
 
-            <Box
-              sx={{
-                textAlign: "center",
-                p: 3,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                color: "white",
-                boxShadow: "0 8px 32px rgba(79, 172, 254, 0.3)",
-              }}
-            >
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                {stats.unread}
-              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  textAlign: "center",
+                  p: 3,
+                  borderRadius: 3,
+                  background:
+                    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                  color: "white",
+                  boxShadow: "0 8px 32px rgba(79, 172, 254, 0.3)",
                 }}
               >
-                <VisibilityOff sx={{ mr: 1 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  未読
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1,
+                    fontSize: { xs: "1.5rem", sm: "3rem" },
+                  }}
+                >
+                  {stats.unread}
                 </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 0, sm: 1 },
+                  }}
+                >
+                  <VisibilityOff
+                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: "0.75rem", sm: "1rem" },
+                      textAlign: "center",
+                    }}
+                  >
+                    未読
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
 
-            <Box
-              sx={{
-                textAlign: "center",
-                p: 3,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                color: "white",
-                boxShadow: "0 8px 32px rgba(250, 112, 154, 0.3)",
-              }}
-            >
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                {stats.favorites}
-              </Typography>
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  textAlign: "center",
+                  p: 3,
+                  borderRadius: 3,
+                  background:
+                    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                  color: "white",
+                  boxShadow: "0 8px 32px rgba(250, 112, 154, 0.3)",
                 }}
               >
-                <Favorite sx={{ mr: 1 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  お気に入り
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1,
+                    fontSize: { xs: "1.5rem", sm: "3rem" },
+                  }}
+                >
+                  {stats.favorites}
                 </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 0, sm: 1 },
+                  }}
+                >
+                  <Favorite
+                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: "0.75rem", sm: "1rem" },
+                      textAlign: "center",
+                    }}
+                  >
+                    お気に入り
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
-        </Paper>
+          </AccordionDetails>
+        </Accordion>
       </Container>
 
       {/* Error Message */}
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 } }}>
         <Collapse in={!!error}>
           <Alert
             severity="error"
@@ -651,8 +820,12 @@ const CardsList: React.FC = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
-              gap: 4,
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(auto-fill, minmax(350px, 1fr))",
+                md: "repeat(auto-fill, minmax(380px, 1fr))",
+              },
+              gap: { xs: 3, sm: 4 },
               mb: 4,
             }}
           >
@@ -673,12 +846,12 @@ const CardsList: React.FC = () => {
           aria-label="add"
           sx={{
             position: "fixed",
-            bottom: 24,
-            right: 24,
+            bottom: { xs: 16, sm: 24 },
+            right: { xs: 16, sm: 24 },
             background: "linear-gradient(45deg, #667eea, #764ba2)",
             boxShadow: "0 8px 32px rgba(102, 126, 234, 0.4)",
-            width: 64,
-            height: 64,
+            width: { xs: 56, sm: 64 },
+            height: { xs: 56, sm: 64 },
             "&:hover": {
               background: "linear-gradient(45deg, #5a6fd8, #6a4190)",
               boxShadow: "0 12px 40px rgba(102, 126, 234, 0.6)",
@@ -688,7 +861,7 @@ const CardsList: React.FC = () => {
           }}
           onClick={() => setShowAddModal(true)}
         >
-          <Add sx={{ fontSize: 30 }} />
+          <Add sx={{ fontSize: { xs: 24, sm: 30 } }} />
         </Fab>
 
         {/* User Menu */}
@@ -752,13 +925,16 @@ const CardsList: React.FC = () => {
           onClose={() => setShowAddModal(false)}
           maxWidth="md"
           fullWidth
+          fullScreen={{ xs: true, sm: false }}
           PaperProps={{
             sx: {
-              borderRadius: "20px",
+              borderRadius: { xs: 0, sm: "20px" },
               background: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(20px)",
               border: "1px solid rgba(255, 255, 255, 0.2)",
               boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              m: { xs: 0, sm: 2 },
+              maxHeight: { xs: "100vh", sm: "90vh" },
             },
           }}
         >
