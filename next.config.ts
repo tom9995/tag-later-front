@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
     images: {
       unoptimized: true,
     },
+    // 静的エクスポート時の最適化
+    experimental: {
+      ppr: false,
+    },
+    // SPA設定
+    generateEtags: false,
+    poweredByHeader: false,
+    // コンパイル時の最適化
+    compiler: {
+      removeConsole: isProd,
+    },
   }),
 
   // GitHub Pages用のbasePath設定（リポジトリ名に合わせて調整）

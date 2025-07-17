@@ -56,7 +56,7 @@ const CardsList: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    is_read: undefined as boolean | undefined,
+    is_read: false as boolean | undefined, // デフォルトで未読を表示
     is_favorite: undefined as boolean | undefined,
     sort_by: "saved_at",
     sort_order: "desc" as "asc" | "desc",

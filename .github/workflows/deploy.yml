@@ -71,12 +71,31 @@ jobs:
           ls -la dist/
           echo "dist directory size:"
           du -sh dist/
+          echo "Checking specific files:"
+          find dist/ -name "*.html" | head -10
+          echo "Checking for signup files:"
+          find dist/ -name "*signup*"
+          echo "Checking directory structure:"
+          tree dist/ -L 3 || find dist/ -type d | head -20
           echo "Checking for environment variables in built files:"
           if grep -r "placeholder.supabase.co" dist/; then
             echo "❌ WARNING: Placeholder URLs found in built files!"
           else
             echo "✅ No placeholder URLs found in built files"
           fi
+
+      - name: Setup GitHub Pages 404 handling
+        run: |
+          echo "Setting up 404.html for GitHub Pages SPA routing..."
+          # publicの404.htmlがdistにコピーされているか確認
+          if [ -f "dist/404.html" ]; then
+            echo "✅ 404.html found in dist directory"
+          else
+            echo "❌ 404.html not found, copying from public"
+            cp public/404.html dist/404.html
+          fi
+          echo "404.html content preview:"
+          head -20 dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

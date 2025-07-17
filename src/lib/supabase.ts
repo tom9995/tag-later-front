@@ -1,52 +1,82 @@
 import { createClient } from "@supabase/supabase-js";
 
-// 環境変数の検証
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// ブラウザ環境でのランタイム環境変数の取得
+function getSupabaseUrl(): string {
+  // ビルド時とランタイム時の環境変数を考慮
+  if (typeof window !== "undefined") {
+    // ブラウザ環境では、ビルド時に注入された環境変数を使用
+    return process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  }
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+}
 
-// 開発環境とプロダクション環境での詳細なエラーメッセージ
-const isDevelopment = process.env.NODE_ENV === "development";
+function getSupabaseAnonKey(): string {
+  // ビルド時とランタイム時の環境変数を考慮
+  if (typeof window !== "undefined") {
+    // ブラウザ環境では、ビルド時に注入された環境変数を使用
+    return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  }
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+}
+
+// 環境変数の検証
+const supabaseUrl = getSupabaseUrl();
+const supabaseAnonKey = getSupabaseAnonKey();
+
+// 静的ビルド時かどうかの判定
 const isStaticBuild = process.env.GITHUB_PAGES === "true";
 
-// 静的ビルド時はダミー値を使用（実際には使用されない）
+// 静的ビルド時のフォールバック値（プレースホルダー）
 const fallbackUrl = "https://placeholder.supabase.co";
 const fallbackKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxMjM0NTYsImV4cCI6MTk2MDY5OTQ1Nn0.placeholder";
 
+// ビルド時（サーバーサイド）では必須チェックを行わない
 const finalUrl = supabaseUrl || (isStaticBuild ? fallbackUrl : "");
 const finalKey = supabaseAnonKey || (isStaticBuild ? fallbackKey : "");
 
-if (!finalUrl && !isStaticBuild) {
-  const errorMessage = isDevelopment
-    ? "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check your .env.local file."
-    : "NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please check GitHub repository secrets.";
-  throw new Error(errorMessage);
-}
+// ランタイム環境変数の検証（ブラウザ環境でのみ）
+function validateEnvironmentVariables() {
+  if (typeof window === "undefined") return; // サーバーサイドではスキップ
 
-if (!finalKey && !isStaticBuild) {
-  const errorMessage = isDevelopment
-    ? "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check your .env.local file."
-    : "NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please check GitHub repository secrets.";
-  throw new Error(errorMessage);
-}
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
 
-// URL形式の検証（静的ビルド時はスキップ）
-if (!isStaticBuild && finalUrl) {
-  try {
-    new URL(finalUrl);
-  } catch {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid URL");
+  if (!url || url === fallbackUrl) {
+    console.error(
+      "❌ NEXT_PUBLIC_SUPABASE_URL environment variable is missing or using placeholder"
+    );
+    console.error("Please ensure GitHub Secrets are properly configured:");
+    console.error("- Repository Settings > Secrets and variables > Actions");
+    console.error(
+      "- Add NEXT_PUBLIC_SUPABASE_URL with your Supabase project URL"
+    );
+    return false;
   }
+
+  if (!key || key === fallbackKey) {
+    console.error(
+      "❌ NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is missing or using placeholder"
+    );
+    console.error("Please ensure GitHub Secrets are properly configured:");
+    console.error("- Repository Settings > Secrets and variables > Actions");
+    console.error(
+      "- Add NEXT_PUBLIC_SUPABASE_ANON_KEY with your Supabase anon key"
+    );
+    return false;
+  }
+
+  console.log("✅ Supabase environment variables validated successfully");
+  return true;
 }
 
-// Supabaseキーの基本的な検証（JWT形式かどうか）（静的ビルド時はスキップ）
-if (!isStaticBuild && finalKey && !finalKey.startsWith("eyJ")) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be invalid (should be a JWT)"
-  );
-}
+// Supabaseクライアントの作成
+export const supabase = createClient(finalUrl, finalKey);
 
-export const supabase = createClient(finalUrl!, finalKey!);
+// ブラウザ環境でのみ環境変数の検証を実行
+if (typeof window !== "undefined") {
+  validateEnvironmentVariables();
+}
 
 // Database型定義
 export interface Database {
