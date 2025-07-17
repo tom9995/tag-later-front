@@ -42,6 +42,7 @@ interface CardItemProps {
 
 const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editTitle, setEditTitle] = useState(card.title);
   const [editDescription, setEditDescription] = useState(
     card.description || ""
@@ -100,16 +101,19 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm("このカードを削除しますか？")) {
-      try {
-        const response = await apiService.deleteCard(card.id);
-        if (response.success) {
-          onDelete(card.id);
-        }
-      } catch (error) {
-        console.error("Failed to delete card:", error);
+    try {
+      const response = await apiService.deleteCard(card.id);
+      if (response.success) {
+        onDelete(card.id);
+        setIsDeleting(false);
       }
+    } catch (error) {
+      console.error("Failed to delete card:", error);
     }
+  };
+
+  const confirmDelete = () => {
+    setIsDeleting(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -217,13 +221,6 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
                     sx={{ width: 20, height: 20 }}
                   />
                 )}
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontWeight: 500 }}
-                >
-                  {card.site_name || "Web"}
-                </Typography>
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <Chip
@@ -494,7 +491,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
             </IconButton>
             <IconButton
               size="small"
-              onClick={handleDelete}
+              onClick={confirmDelete}
               sx={{
                 color: "#f44336",
                 backgroundColor: "rgba(244, 67, 54, 0.1)",
@@ -545,6 +542,47 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
           <Button onClick={handleCancelEdit}>キャンセル</Button>
           <Button onClick={handleSaveEdit} variant="contained">
             保存
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 削除確認ダイアログ */}
+      <Dialog
+        open={isDeleting}
+        onClose={() => setIsDeleting(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            color: "#f44336",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Delete />
+          カードの削除
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            「{card.title}」を削除しますか？
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            この操作は取り消すことができません。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDeleting(false)} color="inherit">
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="contained"
+            color="error"
+            startIcon={<Delete />}
+          >
+            削除
           </Button>
         </DialogActions>
       </Dialog>

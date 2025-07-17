@@ -70,7 +70,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
       const response = await apiService.createCard({
         ...formData,
         title: formData.title.trim(),
-        url: formData.url.trim() || undefined,
+        url: formData.url?.trim() || undefined,
         description: formData.description?.trim() || undefined,
       });
 
