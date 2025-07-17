@@ -4,21 +4,15 @@ import React, { useState, useEffect } from "react";
 import {
   Card as MuiCard,
   CardContent,
-  CardActions,
   Typography,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
   Alert,
   Box,
   IconButton,
   Collapse,
-  Autocomplete,
-  Chip,
 } from "@mui/material";
-import { Add, Close, Link } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import { Card, apiService, CreateCardData, Tag } from "@/services/api";
+import { FormFields, TagSelector, FormActions } from "./AddCardForm/index";
 
 interface AddCardFormProps {
   onCardAdded: (card: Card) => void;
@@ -47,11 +41,11 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
       if (response.success) {
         setAvailableTags(response.data);
       } else {
-        setAvailableTags([]); // エラー時は空の配列をセット
+        setAvailableTags([]);
       }
     } catch (error) {
       console.error("Failed to load tags:", error);
-      setAvailableTags([]); // エラー時は空の配列をセット
+      setAvailableTags([]);
     }
   };
 
@@ -120,6 +114,12 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
             : e.target.value,
       }));
     };
+
+  const handleTagChange = (newTags: Tag[]) => {
+    setSelectedTags(newTags);
+  };
+
+  const isFormValid = formData.title.trim().length > 0;
 
   return (
     <MuiCard
@@ -194,300 +194,26 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           </Alert>
         </Collapse>
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          {/* URL */}
-          <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-            <TextField
-              fullWidth
-              label="URL"
-              type="url"
-              value={formData.url || ""}
-              onChange={handleInputChange("url")}
-              placeholder="https://example.com/article"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  borderRadius: "12px",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "rgba(103, 126, 234, 0.5)",
-                    },
-                  },
-                  "&.Mui-focused": {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#667eea",
-                      borderWidth: "2px",
-                    },
-                  },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "rgba(0, 0, 0, 0.7)",
-                  "&.Mui-focused": {
-                    color: "#667eea",
-                  },
-                },
-              }}
-            />
-            <Button
-              variant="outlined"
-              onClick={handleUrlParse}
-              disabled={isSubmitting || !formData.url?.trim()}
-              startIcon={<Link />}
-              sx={{
-                minWidth: "120px",
-                px: 3,
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                border: "none",
-                color: "white",
-                "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 20px rgba(103, 126, 234, 0.3)",
-                },
-                "&:disabled": {
-                  background: "rgba(0, 0, 0, 0.12)",
-                  color: "rgba(0, 0, 0, 0.26)",
-                },
-                transition: "all 0.3s ease",
-              }}
-            >
-              解析
-            </Button>
-          </Box>
+        <FormFields
+          formData={formData}
+          onInputChange={handleInputChange}
+          onUrlParse={handleUrlParse}
+          isSubmitting={isSubmitting}
+        />
 
-          {/* Title */}
-          <TextField
-            fullWidth
-            required
-            label="タイトル"
-            value={formData.title}
-            onChange={handleInputChange("title")}
-            placeholder="記事のタイトル"
-            variant="outlined"
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderRadius: "12px",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(103, 126, 234, 0.5)",
-                  },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                    borderWidth: "2px",
-                  },
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(0, 0, 0, 0.7)",
-                "&.Mui-focused": {
-                  color: "#667eea",
-                },
-              },
-            }}
-          />
+        <TagSelector
+          selectedTags={selectedTags}
+          availableTags={availableTags}
+          onTagChange={handleTagChange}
+        />
 
-          {/* Description */}
-          <TextField
-            fullWidth
-            label="説明"
-            multiline
-            rows={4}
-            value={formData.description}
-            onChange={handleInputChange("description")}
-            placeholder="記事の説明や感想"
-            variant="outlined"
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderRadius: "12px",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(103, 126, 234, 0.5)",
-                  },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                    borderWidth: "2px",
-                  },
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(0, 0, 0, 0.7)",
-                "&.Mui-focused": {
-                  color: "#667eea",
-                },
-              },
-            }}
-          />
-
-          {/* Options */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={formData.is_favorite}
-                onChange={handleInputChange("is_favorite")}
-                sx={{
-                  color: "rgba(103, 126, 234, 0.6)",
-                  "&.Mui-checked": {
-                    color: "#667eea",
-                  },
-                  "&:hover": {
-                    backgroundColor: "rgba(103, 126, 234, 0.1)",
-                  },
-                }}
-              />
-            }
-            label="お気に入りに追加"
-            sx={{
-              mb: 3,
-              "& .MuiFormControlLabel-label": {
-                fontSize: "1rem",
-                color: "rgba(0, 0, 0, 0.8)",
-                fontWeight: 500,
-              },
-            }}
-          />
-
-          {/* Tags */}
-          <Autocomplete
-            multiple
-            options={availableTags}
-            getOptionLabel={(option) => option.name}
-            value={selectedTags}
-            onChange={(_, newValue) => setSelectedTags(newValue)}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.id}
-                  label={option.name}
-                  sx={{
-                    backgroundColor: option.color + "20",
-                    color: option.color,
-                    borderRadius: "20px",
-                    fontWeight: 500,
-                    "&:hover": {
-                      backgroundColor: option.color + "30",
-                    },
-                  }}
-                />
-              ))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="タグ"
-                placeholder="タグを選択してください"
-                variant="outlined"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "rgba(255, 255, 255, 0.8)",
-                    borderRadius: "12px",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(103, 126, 234, 0.5)",
-                      },
-                    },
-                    "&.Mui-focused": {
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#667eea",
-                        borderWidth: "2px",
-                      },
-                    },
-                  },
-                  "& .MuiInputLabel-root": {
-                    color: "rgba(0, 0, 0, 0.7)",
-                    "&.Mui-focused": {
-                      color: "#667eea",
-                    },
-                  },
-                }}
-              />
-            )}
-            sx={{ mb: 3 }}
-          />
-        </Box>
+        <FormActions
+          onSubmit={handleSubmit}
+          onCancel={onCancel}
+          isSubmitting={isSubmitting}
+          isFormValid={isFormValid}
+        />
       </CardContent>
-
-      <CardActions sx={{ px: 4, pb: 4, pt: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={isSubmitting}
-          startIcon={<Add />}
-          onClick={handleSubmit}
-          sx={{
-            mr: onCancel ? 2 : 0,
-            height: "48px",
-            borderRadius: "12px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            fontSize: "1rem",
-            fontWeight: 600,
-            textTransform: "none",
-            boxShadow: "0 4px 20px rgba(103, 126, 234, 0.3)",
-            "&:hover": {
-              background: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 25px rgba(103, 126, 234, 0.4)",
-            },
-            "&:disabled": {
-              background: "rgba(0, 0, 0, 0.12)",
-              color: "rgba(0, 0, 0, 0.26)",
-              transform: "none",
-              boxShadow: "none",
-            },
-            transition: "all 0.3s ease",
-          }}
-        >
-          {isSubmitting ? "追加中..." : "カードを追加"}
-        </Button>
-        {onCancel && (
-          <Button
-            variant="outlined"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            sx={{
-              height: "48px",
-              borderRadius: "12px",
-              borderColor: "rgba(103, 126, 234, 0.3)",
-              color: "#667eea",
-              fontSize: "1rem",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": {
-                borderColor: "#667eea",
-                backgroundColor: "rgba(103, 126, 234, 0.05)",
-                transform: "translateY(-2px)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            キャンセル
-          </Button>
-        )}
-      </CardActions>
     </MuiCard>
   );
 };

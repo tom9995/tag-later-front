@@ -48,7 +48,7 @@ import {
 import { Card as CardType, apiService } from "@/services/api";
 import CardItem from "@/components/CardItem";
 import AddCardForm from "@/components/AddCardForm";
-import TagManagerDialog from "@/components/TagManagerDialog";
+import TagManager from "@/components/TagManagerDialog";
 
 const CardsList: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -669,144 +669,146 @@ const CardsList: React.FC = () => {
                 flexDirection: { xs: "column", sm: "row" },
               }}
             >
-            {/* Search */}
-            <TextField
-              label="検索"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="タイトルや説明で検索"
-              InputProps={{
-                startAdornment: searchLoading ? (
-                  <CircularProgress
-                    size={20}
-                    sx={{ mr: 1, color: "#667eea" }}
-                  />
-                ) : (
-                  <Search sx={{ mr: 1, color: "#667eea" }} />
-                ),
-              }}
-              sx={{
-                width: { xs: "100%", sm: 280 },
-                minWidth: { xs: "100%", sm: 280 },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 3,
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-
-            {/* Read Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                読書状態
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_read === undefined
-                    ? ""
-                    : filters.is_read.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_read",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="読書状態"
+              {/* Search */}
+              <TextField
+                label="検索"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="タイトルや説明で検索"
+                InputProps={{
+                  startAdornment: searchLoading ? (
+                    <CircularProgress
+                      size={20}
+                      sx={{ mr: 1, color: "#667eea" }}
+                    />
+                  ) : (
+                    <Search sx={{ mr: 1, color: "#667eea" }} />
+                  ),
+                }}
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
+                  width: { xs: "100%", sm: 280 },
+                  minWidth: { xs: "100%", sm: 280 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 3,
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#667eea",
+                    },
                   },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#667eea",
+                  },
+                }}
+              />
+
+              {/* Read Status */}
+              <FormControl
+                sx={{
+                  width: { xs: "100%", sm: 160 },
+                  minWidth: { xs: "100%", sm: 160 },
                 }}
               >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="false">未読</MenuItem>
-                <MenuItem value="true">既読</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                  読書状態
+                </InputLabel>
+                <Select
+                  value={
+                    filters.is_read === undefined
+                      ? ""
+                      : filters.is_read.toString()
+                  }
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "is_read",
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true"
+                    )
+                  }
+                  label="読書状態"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#667eea",
+                    },
+                  }}
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="false">未読</MenuItem>
+                  <MenuItem value="true">既読</MenuItem>
+                </Select>
+              </FormControl>
 
-            {/* Favorite Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                お気に入り
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_favorite === undefined
-                    ? ""
-                    : filters.is_favorite.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_favorite",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="お気に入り"
+              {/* Favorite Status */}
+              <FormControl
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
+                  width: { xs: "100%", sm: 160 },
+                  minWidth: { xs: "100%", sm: 160 },
                 }}
               >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="true">お気に入り</MenuItem>
-                <MenuItem value="false">通常</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                  お気に入り
+                </InputLabel>
+                <Select
+                  value={
+                    filters.is_favorite === undefined
+                      ? ""
+                      : filters.is_favorite.toString()
+                  }
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "is_favorite",
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true"
+                    )
+                  }
+                  label="お気に入り"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#667eea",
+                    },
+                  }}
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="true">お気に入り</MenuItem>
+                  <MenuItem value="false">通常</MenuItem>
+                </Select>
+              </FormControl>
 
-            {/* Sort */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 200 },
-                minWidth: { xs: "100%", sm: 200 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                並び順
-              </InputLabel>
-              <Select
-                value={`${filters.sort_by}_${filters.sort_order}`}
-                onChange={(e) => {
-                  const [sort_by, sort_order] = e.target.value.split("_");
-                  handleFilterChange("sort_by", sort_by);
-                  handleFilterChange("sort_order", sort_order);
-                }}
-                label="並び順"
+              {/* Sort */}
+              <FormControl
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
+                  width: { xs: "100%", sm: 200 },
+                  minWidth: { xs: "100%", sm: 200 },
                 }}
               >
-                <MenuItem value="saved_at_desc">保存日時（新しい順）</MenuItem>
-                <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
-                <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
-                <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
+                  並び順
+                </InputLabel>
+                <Select
+                  value={`${filters.sort_by}_${filters.sort_order}`}
+                  onChange={(e) => {
+                    const [sort_by, sort_order] = e.target.value.split("_");
+                    handleFilterChange("sort_by", sort_by);
+                    handleFilterChange("sort_order", sort_order);
+                  }}
+                  label="並び順"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#667eea",
+                    },
+                  }}
+                >
+                  <MenuItem value="saved_at_desc">
+                    保存日時（新しい順）
+                  </MenuItem>
+                  <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
+                  <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
+                  <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
           </AccordionDetails>
         </Accordion>
@@ -1046,7 +1048,7 @@ const CardsList: React.FC = () => {
         </Dialog>
 
         {/* Tag Manager Dialog */}
-        <TagManagerDialog
+        <TagManager
           open={showTagManager}
           onClose={() => setShowTagManager(false)}
           onTagsUpdated={loadCards}
