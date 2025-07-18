@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -7,53 +5,37 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
   TextField,
   Box,
-  Chip,
   Typography,
+  Chip,
   Alert,
-  IconButton,
-  Stack,
-  CircularProgress,
 } from "@mui/material";
-import { Add, Edit, Delete, Save, Cancel, Palette } from "@mui/icons-material";
+import { Edit, Delete, Close } from "@mui/icons-material";
 import { Tag, apiService } from "@/services/api";
 
-interface TagManagerProps {
+interface TagManagerDialogProps {
   open: boolean;
   onClose: () => void;
-  onTagsUpdated?: () => void;
+  onTagsUpdated: () => void;
 }
 
-const TagManager: React.FC<TagManagerProps> = ({
+const TagManagerDialog: React.FC<TagManagerDialogProps> = ({
   open,
   onClose,
   onTagsUpdated,
 }) => {
   const [tags, setTags] = useState<Tag[]>([]);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#3498db");
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editingTag, setEditingTag] = useState<Tag | null>(null);
-  const [newTag, setNewTag] = useState({ name: "", color: "#2196f3" });
-
-  const predefinedColors = [
-    "#f44336",
-    "#e91e63",
-    "#9c27b0",
-    "#673ab7",
-    "#3f51b5",
-    "#2196f3",
-    "#03a9f4",
-    "#00bcd4",
-    "#009688",
-    "#4caf50",
-    "#8bc34a",
-    "#cddc39",
-    "#ffeb3b",
-    "#ffc107",
-    "#ff9800",
-    "#ff5722",
-  ];
 
   useEffect(() => {
     if (open) {
@@ -64,439 +46,300 @@ const TagManager: React.FC<TagManagerProps> = ({
   const loadTags = async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await apiService.getTags();
       if (response.success) {
         setTags(response.data);
       } else {
-        setError(response.error || "タグの取得に失敗しました");
-        setTags([]); // エラー時は空の配列をセット
+        setError("タグの読み込みに失敗しました");
       }
     } catch (error) {
       console.error("Failed to load tags:", error);
-      setError("タグの取得中にエラーが発生しました");
-      setTags([]); // エラー時は空の配列をセット
+      setError("タグの読み込み中にエラーが発生しました");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateTag = async () => {
-    if (!newTag.name.trim()) {
-      setError("タグ名を入力してください");
-      return;
-    }
+    if (!newTagName.trim()) return;
 
     try {
+      setLoading(true);
+      setError(null);
       const response = await apiService.createTag({
-        name: newTag.name.trim(),
-        color: newTag.color,
+        name: newTagName.trim(),
+        color: newTagColor,
       });
 
       if (response.success) {
-        setTags((prev) => [...prev, response.data]);
-        setNewTag({ name: "", color: "#2196f3" });
-        setError(null);
-        onTagsUpdated?.();
+        setTags([...tags, response.data]);
+        setNewTagName("");
+        setNewTagColor("#3498db");
+        onTagsUpdated();
       } else {
         setError(response.error || "タグの作成に失敗しました");
       }
     } catch (error) {
       console.error("Failed to create tag:", error);
       setError("タグの作成中にエラーが発生しました");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateTag = async (tag: Tag) => {
-    if (!tag.name.trim()) {
-      setError("タグ名を入力してください");
-      return;
-    }
+  const handleUpdateTag = async () => {
+    if (!editingTag) return;
 
     try {
-      const response = await apiService.updateTag(tag.id, {
-        name: tag.name.trim(),
-        color: tag.color,
+      setLoading(true);
+      setError(null);
+      const response = await apiService.updateTag(editingTag.id, {
+        name: editingTag.name,
+        color: editingTag.color,
       });
 
       if (response.success) {
-        setTags((prev) =>
-          prev.map((t) => (t.id === tag.id ? response.data : t))
+        setTags(
+          tags.map((tag) => (tag.id === editingTag.id ? response.data : tag))
         );
         setEditingTag(null);
-        setError(null);
-        onTagsUpdated?.();
+        onTagsUpdated();
       } else {
         setError(response.error || "タグの更新に失敗しました");
       }
     } catch (error) {
       console.error("Failed to update tag:", error);
       setError("タグの更新中にエラーが発生しました");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteTag = async (tagId: string) => {
-    if (
-      !window.confirm(
-        "このタグを削除しますか？関連するカードからも削除されます。"
-      )
-    ) {
-      return;
-    }
+    if (!confirm("このタグを削除しますか？")) return;
 
     try {
+      setLoading(true);
+      setError(null);
       const response = await apiService.deleteTag(tagId);
+
       if (response.success) {
-        setTags((prev) => prev.filter((t) => t.id !== tagId));
-        setError(null);
-        onTagsUpdated?.();
+        setTags(tags.filter((tag) => tag.id !== tagId));
+        onTagsUpdated();
       } else {
         setError(response.error || "タグの削除に失敗しました");
       }
     } catch (error) {
       console.error("Failed to delete tag:", error);
       setError("タグの削除中にエラーが発生しました");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setEditingTag(null);
-    setNewTag({ name: "", color: "#2196f3" });
-    setError(null);
-    onClose();
-  };
+  const colorOptions = [
+    "#3498db",
+    "#e74c3c",
+    "#2ecc71",
+    "#f39c12",
+    "#9b59b6",
+    "#1abc9c",
+    "#34495e",
+    "#e67e22",
+    "#95a5a6",
+    "#f1c40f",
+  ];
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          background: "rgba(255, 255, 255, 0.95)",
+      sx={{
+        "& .MuiDialog-paper": {
+          borderRadius: "20px",
+          background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
           backdropFilter: "blur(20px)",
           border: "1px solid rgba(255, 255, 255, 0.2)",
-          borderRadius: "20px",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
         },
       }}
     >
       <DialogTitle
         sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "linear-gradient(135deg, #95a5a6 0%, #bdc3c7 100%)",
           backgroundClip: "text",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           fontWeight: 700,
           fontSize: "1.5rem",
-          pb: 1,
         }}
       >
         タグ管理
+        <IconButton onClick={onClose} size="small">
+          <Close />
+        </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ px: 3, pb: 2 }}>
+
+      <DialogContent sx={{ p: 3 }}>
         {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              backgroundColor: "rgba(244, 67, 54, 0.1)",
-              border: "1px solid rgba(244, 67, 54, 0.2)",
-              borderRadius: "12px",
-              "& .MuiAlert-icon": {
-                color: "#f44336",
-              },
-            }}
-          >
+          <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
         {/* 新しいタグの作成 */}
-        <Box
-          sx={{
-            mb: 4,
-            p: 3,
-            background: "rgba(255, 255, 255, 0.6)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
-            borderRadius: "16px",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-          }}
-        >
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{
-              fontWeight: 600,
-              color: "rgba(0, 0, 0, 0.8)",
-              mb: 2,
-            }}
-          >
-            新しいタグを作成
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: "#2c3e50" }}>
+            新しいタグを追加
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
             <TextField
+              fullWidth
               label="タグ名"
-              value={newTag.name}
-              onChange={(e) =>
-                setNewTag((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="例: JavaScript"
-              sx={{
-                minWidth: 200,
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  borderRadius: "12px",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "rgba(103, 126, 234, 0.5)",
-                    },
-                  },
-                  "&.Mui-focused": {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#667eea",
-                      borderWidth: "2px",
-                    },
-                  },
-                },
-                "& .MuiInputLabel-root": {
-                  color: "rgba(0, 0, 0, 0.7)",
-                  "&.Mui-focused": {
-                    color: "#667eea",
-                  },
-                },
-              }}
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              disabled={loading}
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Palette fontSize="small" sx={{ color: "rgba(0, 0, 0, 0.6)" }} />
-              <input
-                type="color"
-                value={newTag.color}
-                onChange={(e) =>
-                  setNewTag((prev) => ({ ...prev, color: e.target.value }))
-                }
-                style={{
-                  width: 40,
-                  height: 40,
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-              />
-              <Chip
-                label={newTag.name || "プレビュー"}
-                size="small"
-                sx={{
-                  backgroundColor: newTag.color + "20",
-                  color: newTag.color,
-                  borderRadius: "16px",
-                  fontWeight: 500,
-                }}
-              />
-            </Box>
             <Button
               variant="contained"
               onClick={handleCreateTag}
-              disabled={!newTag.name.trim() || loading}
-              startIcon={<Add />}
+              disabled={loading || !newTagName.trim()}
               sx={{
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                fontWeight: 600,
-                textTransform: "none",
-                px: 3,
-                boxShadow: "0 4px 15px rgba(103, 126, 234, 0.3)",
-                "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 20px rgba(103, 126, 234, 0.4)",
-                },
-                "&:disabled": {
-                  background: "rgba(0, 0, 0, 0.12)",
-                  color: "rgba(0, 0, 0, 0.26)",
-                  transform: "none",
-                  boxShadow: "none",
-                },
-                transition: "all 0.3s ease",
+                minWidth: "100px",
+                backgroundColor: "#3498db",
+                "&:hover": { backgroundColor: "#2980b9" },
               }}
             >
-              タグを作成
+              追加
             </Button>
           </Box>
-
-          {/* カラーパレット */}
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              色を選択:
-            </Typography>
-            <Stack direction="row" spacing={0.5} flexWrap="wrap">
-              {predefinedColors.map((color) => (
-                <Box
-                  key={color}
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    backgroundColor: color,
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    border:
-                      newTag.color === color
-                        ? "2px solid #000"
-                        : "1px solid #ccc",
-                    mb: 0.5,
-                  }}
-                  onClick={() => setNewTag((prev) => ({ ...prev, color }))}
-                />
-              ))}
-            </Stack>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {colorOptions.map((color) => (
+              <Box
+                key={color}
+                onClick={() => setNewTagColor(color)}
+                sx={{
+                  width: 24,
+                  height: 24,
+                  backgroundColor: color,
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  border:
+                    newTagColor === color
+                      ? "3px solid #2c3e50"
+                      : "2px solid #ecf0f1",
+                  transition: "all 0.2s ease",
+                }}
+              />
+            ))}
           </Box>
         </Box>
 
         {/* 既存のタグ一覧 */}
-        <Typography variant="h6" gutterBottom>
-          既存のタグ ({tags.length})
+        <Typography variant="h6" sx={{ mb: 2, color: "#2c3e50" }}>
+          既存のタグ
         </Typography>
-
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : tags.length === 0 ? (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ py: 4, textAlign: "center" }}
-          >
-            まだタグがありません
-          </Typography>
-        ) : (
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {tags.map((tag) => (
-              <Box
-                key={tag.id}
-                sx={{
-                  p: 1,
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  minWidth: 250,
-                }}
-              >
-                {editingTag?.id === tag.id ? (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      flexGrow: 1,
-                    }}
-                  >
-                    <TextField
-                      size="small"
-                      value={editingTag.name}
-                      onChange={(e) =>
-                        setEditingTag((prev) =>
-                          prev ? { ...prev, name: e.target.value } : null
-                        )
-                      }
-                      sx={{ flexGrow: 1 }}
-                    />
-                    <input
-                      type="color"
-                      value={editingTag.color}
-                      onChange={(e) =>
-                        setEditingTag((prev) =>
-                          prev ? { ...prev, color: e.target.value } : null
-                        )
-                      }
-                      style={{
-                        width: 30,
-                        height: 30,
-                        border: "none",
-                        borderRadius: 4,
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={() => handleUpdateTag(editingTag)}
-                      color="primary"
-                    >
-                      <Save />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => setEditingTag(null)}
-                    >
-                      <Cancel />
-                    </IconButton>
+        <List sx={{ maxHeight: "300px", overflow: "auto" }}>
+          {tags.map((tag) => (
+            <ListItem
+              key={tag.id}
+              sx={{
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                borderRadius: "12px",
+                mb: 1,
+                border: "1px solid rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              {editingTag?.id === tag.id ? (
+                <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+                  <TextField
+                    value={editingTag.name}
+                    onChange={(e) =>
+                      setEditingTag({ ...editingTag, name: e.target.value })
+                    }
+                    size="small"
+                  />
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    {colorOptions.map((color) => (
+                      <Box
+                        key={color}
+                        onClick={() => setEditingTag({ ...editingTag, color })}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          backgroundColor: color,
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          border:
+                            editingTag.color === color
+                              ? "2px solid #2c3e50"
+                              : "1px solid #ecf0f1",
+                        }}
+                      />
+                    ))}
                   </Box>
-                ) : (
-                  <>
-                    <Chip
-                      label={tag.name}
+                  <Button onClick={handleUpdateTag} size="small">
+                    保存
+                  </Button>
+                  <Button onClick={() => setEditingTag(null)} size="small">
+                    キャンセル
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <ListItemText
+                    primary={
+                      <Chip
+                        label={tag.name}
+                        size="small"
+                        sx={{
+                          backgroundColor: tag.color,
+                          color: "#fff",
+                          fontWeight: 500,
+                        }}
+                      />
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      onClick={() => setEditingTag(tag)}
                       size="small"
-                      sx={{
-                        backgroundColor: tag.color + "20",
-                        color: tag.color,
-                        flexGrow: 1,
-                        justifyContent: "flex-start",
-                      }}
-                    />
-                    <Box>
-                      <IconButton
-                        size="small"
-                        onClick={() => setEditingTag(tag)}
-                      >
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteTag(tag.id)}
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  </>
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
+                      disabled={loading}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteTag(tag.id)}
+                      size="small"
+                      disabled={loading}
+                      sx={{ color: "#e74c3c" }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </>
+              )}
+            </ListItem>
+          ))}
+        </List>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+
+      <DialogActions sx={{ p: 3 }}>
         <Button
-          onClick={handleClose}
+          onClick={onClose}
+          variant="outlined"
           sx={{
-            borderRadius: "12px",
-            borderColor: "rgba(103, 126, 234, 0.3)",
-            color: "#667eea",
-            fontSize: "1rem",
-            fontWeight: 500,
-            textTransform: "none",
-            px: 4,
+            borderColor: "#95a5a6",
+            color: "#95a5a6",
             "&:hover": {
-              borderColor: "#667eea",
-              backgroundColor: "rgba(103, 126, 234, 0.05)",
-              transform: "translateY(-2px)",
+              borderColor: "#7f8c8d",
+              backgroundColor: "rgba(127, 140, 141, 0.1)",
             },
-            transition: "all 0.3s ease",
           }}
         >
           閉じる
@@ -506,4 +349,4 @@ const TagManager: React.FC<TagManagerProps> = ({
   );
 };
 
-export default TagManager;
+export default TagManagerDialog;

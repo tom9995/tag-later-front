@@ -60,7 +60,7 @@ export default function SignupPage() {
       if (error.message.includes("already registered")) {
         setError("このメールアドレスは既に登録されています");
       } else {
-        setError("登録に失敗しました。もう一度お試しください。");
+        setError("登録に失敗しました。もう一度お試しください");
       }
     } else {
       setSuccess(true);
@@ -99,24 +99,24 @@ export default function SignupPage() {
             }}
           >
             <Typography variant="h5" sx={{ mb: 2, color: "success.main" }}>
-              登録完了！
+              登録完了{" "}
             </Typography>
             <Typography variant="body1" sx={{ mb: 3 }}>
-              確認メールを送信しました。メール内のリンクをクリックしてアカウントを有効化してください。
+              確認メールを送信しました。メールリンクをクリックしてアカウントを有効化してください{" "}
             </Typography>
             <Button
               component={NextLink}
               href="/login"
               variant="contained"
               sx={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: "linear-gradient(135deg, #7f8c8d 0%, #34495e 100%)",
                 "&:hover": {
                   background:
                     "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
                 },
               }}
             >
-              ログインページに戻る
+              ログインページに戻る{" "}
             </Button>
           </Paper>
         </Box>
@@ -153,7 +153,7 @@ export default function SignupPage() {
             gutterBottom
             align="center"
             sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: "linear-gradient(135deg, #2c3e50 0%, #3498db 100%)",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -167,7 +167,11 @@ export default function SignupPage() {
           <Typography
             variant="h6"
             align="center"
-            sx={{ mb: 3, color: "text.secondary" }}
+            sx={{
+              mb: 3,
+              color: "#2c3e50",
+              fontWeight: 600,
+            }}
           >
             新規登録
           </Typography>
@@ -182,7 +186,7 @@ export default function SignupPage() {
             <TextField
               fullWidth
               type="text"
-              label="お名前"
+              label="お名剁"
               variant="outlined"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -208,7 +212,7 @@ export default function SignupPage() {
             <TextField
               fullWidth
               type="password"
-              label="パスワード"
+              label="パスワーチ"
               variant="outlined"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -239,7 +243,7 @@ export default function SignupPage() {
               disabled={loading}
               sx={{
                 py: 1.5,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: "linear-gradient(135deg, #7f8c8d 0%, #34495e 100%)",
                 "&:hover": {
                   background:
                     "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",

@@ -1,19 +1,10 @@
-import { Container, Typography, Box } from "@mui/material";
+import React from "react";
 
-export default function AboutPage() {
+export default function About() {
   return (
-    <Container maxWidth="md">
-      <Box sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          TagLater について
-        </Typography>
-        <Typography variant="body1" paragraph>
-          TagLaterは、ウェブページを保存・管理するためのブックマークアプリケーションです。
-        </Typography>
-        <Typography variant="body1" paragraph>
-          お気に入りの記事やウェブサイトを保存し、タグで整理して後で読み返すことができます。
-        </Typography>
-      </Box>
-    </Container>
+    <div>
+      <h1>About</h1>
+      <p>このページは準備中です。</p>
+    </div>
   );
 }

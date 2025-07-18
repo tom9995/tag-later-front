@@ -53,7 +53,8 @@ export default function Header({ title }: HeaderProps) {
     try {
       await signOut();
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Failed to logout:", error);
+      // ログアウトエラーを無視
     } finally {
       setIsLoggingOut(false);
       setLogoutDialog(false);
@@ -85,7 +86,7 @@ export default function Header({ title }: HeaderProps) {
         justifyContent="space-between"
         sx={{
           padding: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, #7f8c8d 0%, #34495e 100%)",
           color: "white",
           borderRadius: "0 0 24px 24px",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
@@ -198,9 +199,9 @@ export default function Header({ title }: HeaderProps) {
               type="button"
               sx={{
                 p: "8px",
-                color: "#667eea",
+                color: "#7f8c8d",
                 "&:hover": {
-                  background: "rgba(103, 126, 234, 0.1)",
+                  background: "rgba(127, 140, 141, 0.3)",
                   transform: "scale(1.1)",
                 },
                 transition: "all 0.2s ease",
@@ -271,7 +272,7 @@ export default function Header({ title }: HeaderProps) {
             textAlign: "center",
           }}
         >
-          ログアウトの確認
+          ログアウト
         </DialogTitle>
         <DialogContent>
           <DialogContentText

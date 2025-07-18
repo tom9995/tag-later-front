@@ -18,7 +18,6 @@ import {
   Alert,
   CircularProgress,
   Dialog,
-  DialogTitle,
   DialogContent,
   IconButton,
   Menu,
@@ -41,14 +40,13 @@ import {
   Logout,
   AccountCircle,
   MoreVert,
-  Close,
   ExpandMore,
   BarChart,
 } from "@mui/icons-material";
 import { Card as CardType, apiService } from "@/services/api";
 import CardItem from "@/components/CardItem";
 import AddCardForm from "@/components/AddCardForm";
-import TagManagerDialog from "@/components/TagManagerDialog";
+import TagManager from "@/components/TagManagerDialog";
 
 const CardsList: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -66,7 +64,7 @@ const CardsList: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    is_read: false as boolean | undefined, // デフォルトで未読を表示
+    is_read: false as boolean | undefined, // デフォルトで未読のみを表示
     is_favorite: undefined as boolean | undefined,
     sort_by: "saved_at",
     sort_order: "desc" as "asc" | "desc",
@@ -100,12 +98,12 @@ const CardsList: React.FC = () => {
         setCards(response.data.cards);
       } else {
         setError(response.error || "カードの取得に失敗しました");
-        setCards([]); // エラー時は空の配列をセット
+        setCards([]);
       }
     } catch (error) {
       console.error("Failed to load cards:", error);
-      setError("カードの取得中にエラーが発生しました");
-      setCards([]); // エラー時は空の配列をセット
+      setError("カード取得中にエラーが発生しました");
+      setCards([]);
     } finally {
       if (isSearch) {
         setSearchLoading(false);
@@ -127,7 +125,6 @@ const CardsList: React.FC = () => {
 
   const handleCardUpdated = (updatedCard: CardType) => {
     setCards((prev) => {
-      // フィルターに基づいてカードを表示すべきかチェック
       const shouldShowCard =
         (filters.is_read === undefined ||
           filters.is_read === updatedCard.is_read) &&
@@ -135,12 +132,10 @@ const CardsList: React.FC = () => {
           filters.is_favorite === updatedCard.is_favorite);
 
       if (shouldShowCard) {
-        // フィルター条件に合致する場合は更新
         return prev.map((card) =>
           card.id === updatedCard.id ? updatedCard : card
         );
       } else {
-        // フィルター条件に合致しない場合はリストから除外
         return prev.filter((card) => card.id !== updatedCard.id);
       }
     });
@@ -166,7 +161,8 @@ const CardsList: React.FC = () => {
     try {
       await signOut();
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Failed to logout:", error);
+      // ログアウトエラーを無視
     } finally {
       setIsLoggingOut(false);
       setUserMenuAnchor(null);
@@ -197,7 +193,6 @@ const CardsList: React.FC = () => {
       }
     );
 
-    // 文字数制限（20文字まで）
     const displayName =
       safeName && safeName.trim().length > 0
         ? safeName.slice(0, 20)
@@ -213,22 +208,12 @@ const CardsList: React.FC = () => {
     favorites: cards.filter((card) => card.is_favorite).length,
   };
 
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          カードを読み込み中...
-        </Typography>
-      </Container>
-    );
-  }
-
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background:
+          "linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%)",
         pb: 4,
       }}
     >
@@ -241,11 +226,12 @@ const CardsList: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              background: "rgba(255, 255, 255, 0.95)",
+              background: "rgb(244,246,247)",
               backdropFilter: "blur(20px)",
               borderRadius: 4,
               p: { xs: 1.5, sm: 2.5 },
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "white",
             }}
           >
             <Box
@@ -264,7 +250,7 @@ const CardsList: React.FC = () => {
                   component="h1"
                   sx={{
                     fontWeight: 800,
-                    background: "linear-gradient(45deg, #667eea, #764ba2)",
+                    background: "linear-gradient(45deg, #2c3e50, #3498db)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     mb: 1,
@@ -292,12 +278,12 @@ const CardsList: React.FC = () => {
                     borderRadius: 3,
                     px: { xs: 2, sm: 3 },
                     fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    borderColor: "#667eea",
-                    color: "#667eea",
+                    borderColor: "#2c3e50",
+                    color: "#2c3e50",
                     "&:hover": {
-                      borderColor: "#764ba2",
-                      color: "#764ba2",
-                      background: "rgba(118, 75, 162, 0.05)",
+                      borderColor: "#3498db",
+                      color: "#3498db",
+                      background: "rgba(52, 152, 219, 0.1)",
                     },
                   }}
                 >
@@ -314,16 +300,16 @@ const CardsList: React.FC = () => {
                     borderRadius: 3,
                     px: { xs: 2, sm: 3 },
                     fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    background: "linear-gradient(45deg, #667eea, #764ba2)",
-                    boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
+                    background: "linear-gradient(45deg, #3498db, #2c3e50)",
+                    boxShadow: "0 8px 32px rgba(52, 152, 219, 0.3)",
                     "&:hover": {
-                      background: "linear-gradient(45deg, #5a6fd8, #6a4190)",
-                      boxShadow: "0 12px 40px rgba(102, 126, 234, 0.4)",
+                      background: "linear-gradient(45deg, #2980b9, #34495e)",
+                      boxShadow: "0 12px 40px rgba(52, 152, 219, 0.4)",
                     },
                   }}
                 >
                   <Box sx={{ display: { xs: "none", sm: "inline" } }}>
-                    新しいカード
+                    新しいカードを追加
                   </Box>
                   <Box sx={{ display: { xs: "inline", sm: "none" } }}>追加</Box>
                 </Button>
@@ -333,9 +319,9 @@ const CardsList: React.FC = () => {
                   size="small"
                   sx={{
                     ml: { xs: 0, sm: 1 },
-                    color: "#667eea",
+                    color: "#7f8c8d",
                     "&:hover": {
-                      backgroundColor: "rgba(103, 126, 234, 0.1)",
+                      backgroundColor: "rgba(127, 140, 141, 0.3)",
                     },
                   }}
                 >
@@ -375,7 +361,7 @@ const CardsList: React.FC = () => {
             expandIcon={
               <ExpandMore
                 sx={{
-                  color: "#667eea",
+                  color: "#7f8c8d",
                   fontSize: { xs: 20, sm: 24 },
                 }}
               />
@@ -389,7 +375,7 @@ const CardsList: React.FC = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <BarChart
-                sx={{ color: "#667eea", fontSize: { xs: 20, sm: 24 } }}
+                sx={{ color: "#7f8c8d", fontSize: { xs: 20, sm: 24 } }}
               />
               <Typography
                 variant="h6"
@@ -421,7 +407,7 @@ const CardsList: React.FC = () => {
                   p: 3,
                   borderRadius: 3,
                   background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    "linear-gradient(135deg, #7f8c8d 0%, #34495e 100%)",
                   color: "white",
                   boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
                 }}
@@ -631,7 +617,7 @@ const CardsList: React.FC = () => {
             expandIcon={
               <ExpandMore
                 sx={{
-                  color: "#667eea",
+                  color: "#7f8c8d",
                   fontSize: { xs: 20, sm: 24 },
                 }}
               />
@@ -645,7 +631,7 @@ const CardsList: React.FC = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <FilterList
-                sx={{ color: "#667eea", fontSize: { xs: 20, sm: 24 } }}
+                sx={{ color: "#7f8c8d", fontSize: { xs: 20, sm: 24 } }}
               />
               <Typography
                 variant="h6"
@@ -669,144 +655,158 @@ const CardsList: React.FC = () => {
                 flexDirection: { xs: "column", sm: "row" },
               }}
             >
-            {/* Search */}
-            <TextField
-              label="検索"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="タイトルや説明で検索"
-              InputProps={{
-                startAdornment: searchLoading ? (
-                  <CircularProgress
-                    size={20}
-                    sx={{ mr: 1, color: "#667eea" }}
-                  />
-                ) : (
-                  <Search sx={{ mr: 1, color: "#667eea" }} />
-                ),
-              }}
-              sx={{
-                width: { xs: "100%", sm: 280 },
-                minWidth: { xs: "100%", sm: 280 },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 3,
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#667eea",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#667eea",
-                },
-              }}
-            />
-
-            {/* Read Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                読書状態
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_read === undefined
-                    ? ""
-                    : filters.is_read.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_read",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="読書状態"
+              {/* Search */}
+              <TextField
+                label="検索"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="検索"
+                InputProps={{
+                  startAdornment: searchLoading ? (
+                    <CircularProgress
+                      size={20}
+                      sx={{
+                        mr: 1,
+                        color: "#7f8c8d",
+                        animation: "pulse 1.5s ease-in-out infinite",
+                        "@keyframes pulse": {
+                          "0%, 100%": {
+                            opacity: 1,
+                          },
+                          "50%": {
+                            opacity: 0.6,
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    <Search sx={{ mr: 1, color: "#7f8c8d" }} />
+                  ),
+                }}
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
+                  width: { xs: "100%", sm: 280 },
+                  minWidth: { xs: "100%", sm: 280 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 3,
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#7f8c8d",
+                    },
                   },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#7f8c8d",
+                  },
+                }}
+              />
+
+              {/* Read Status */}
+              <FormControl
+                sx={{
+                  width: { xs: "100%", sm: 160 },
+                  minWidth: { xs: "100%", sm: 160 },
                 }}
               >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="false">未読</MenuItem>
-                <MenuItem value="true">既読</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
+                  状態
+                </InputLabel>
+                <Select
+                  value={
+                    filters.is_read === undefined
+                      ? ""
+                      : filters.is_read.toString()
+                  }
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "is_read",
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true"
+                    )
+                  }
+                  label="読書状況"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#7f8c8d",
+                    },
+                  }}
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="false">未読</MenuItem>
+                  <MenuItem value="true">既読</MenuItem>
+                </Select>
+              </FormControl>
 
-            {/* Favorite Status */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 160 },
-                minWidth: { xs: "100%", sm: 160 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                お気に入り
-              </InputLabel>
-              <Select
-                value={
-                  filters.is_favorite === undefined
-                    ? ""
-                    : filters.is_favorite.toString()
-                }
-                onChange={(e) =>
-                  handleFilterChange(
-                    "is_favorite",
-                    e.target.value === ""
-                      ? undefined
-                      : e.target.value === "true"
-                  )
-                }
-                label="お気に入り"
+              {/* Favorite Status */}
+              <FormControl
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
+                  width: { xs: "100%", sm: 160 },
+                  minWidth: { xs: "100%", sm: 160 },
                 }}
               >
-                <MenuItem value="">すべて</MenuItem>
-                <MenuItem value="true">お気に入り</MenuItem>
-                <MenuItem value="false">通常</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
+                  お気に入り
+                </InputLabel>
+                <Select
+                  value={
+                    filters.is_favorite === undefined
+                      ? ""
+                      : filters.is_favorite.toString()
+                  }
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "is_favorite",
+                      e.target.value === ""
+                        ? undefined
+                        : e.target.value === "true"
+                    )
+                  }
+                  label="お気に入り"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#7f8c8d",
+                    },
+                  }}
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="true">お気に入り</MenuItem>
+                  <MenuItem value="false">通常</MenuItem>
+                </Select>
+              </FormControl>
 
-            {/* Sort */}
-            <FormControl
-              sx={{
-                width: { xs: "100%", sm: 200 },
-                minWidth: { xs: "100%", sm: 200 },
-              }}
-            >
-              <InputLabel sx={{ "&.Mui-focused": { color: "#667eea" } }}>
-                並び順
-              </InputLabel>
-              <Select
-                value={`${filters.sort_by}_${filters.sort_order}`}
-                onChange={(e) => {
-                  const [sort_by, sort_order] = e.target.value.split("_");
-                  handleFilterChange("sort_by", sort_by);
-                  handleFilterChange("sort_order", sort_order);
-                }}
-                label="並び順"
+              {/* Sort */}
+              <FormControl
                 sx={{
-                  borderRadius: 3,
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#667eea",
-                  },
+                  width: { xs: "100%", sm: 200 },
+                  minWidth: { xs: "100%", sm: 200 },
                 }}
               >
-                <MenuItem value="saved_at_desc">保存日時（新しい順）</MenuItem>
-                <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
-                <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
-                <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
-              </Select>
-            </FormControl>
+                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
+                  並び順
+                </InputLabel>
+                <Select
+                  value={`${filters.sort_by}_${filters.sort_order}`}
+                  onChange={(e) => {
+                    const [sort_by, sort_order] = e.target.value.split("_");
+                    handleFilterChange("sort_by", sort_by);
+                    handleFilterChange("sort_order", sort_order);
+                  }}
+                  label="並び順"
+                  sx={{
+                    borderRadius: 3,
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#7f8c8d",
+                    },
+                  }}
+                >
+                  <MenuItem value="saved_at_desc">
+                    保存日時（新しい順）
+                  </MenuItem>
+                  <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
+                  <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
+                  <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
           </AccordionDetails>
         </Accordion>
@@ -828,22 +828,194 @@ const CardsList: React.FC = () => {
         </Collapse>
 
         {/* Cards Grid */}
-        {cards.length === 0 ? (
+        {loading || searchLoading ? (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(auto-fill, minmax(350px, 1fr))",
+                md: "repeat(auto-fill, minmax(380px, 1fr))",
+              },
+              gap: { xs: 3, sm: 4 },
+              mb: 4,
+            }}
+          >
+            {Array.from({ length: searchLoading ? 3 : 6 }, (_, index) => (
+              <Paper
+                key={index}
+                elevation={0}
+                sx={{
+                  background: "rgba(52, 73, 94, 0.95)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "20px",
+                  p: 3,
+                  height: "300px",
+                  display: "flex",
+                  flexDirection: "column",
+                  position: "relative",
+                  overflow: "hidden",
+                  animation: `pulse 1.5s ease-in-out infinite ${index * 0.2}s`,
+                  "@keyframes pulse": {
+                    "0%, 100%": {
+                      opacity: 1,
+                    },
+                    "50%": {
+                      opacity: 0.7,
+                    },
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "160px",
+                    backgroundColor: "rgba(127, 140, 141, 0.3)",
+                    borderRadius: "12px",
+                    mb: 2,
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: "-100%",
+                      width: "100%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                      animation: "shimmer 2s infinite",
+                    },
+                    "@keyframes shimmer": {
+                      "0%": { left: "-100%" },
+                      "100%": { left: "100%" },
+                    },
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    width: "80%",
+                    height: "20px",
+                    backgroundColor: "rgba(127, 140, 141, 0.3)",
+                    borderRadius: "10px",
+                    mb: 1,
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: "-100%",
+                      width: "100%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                      animation: "shimmer 2s infinite 0.5s",
+                    },
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    width: "60%",
+                    height: "14px",
+                    backgroundColor: "rgba(127, 140, 141, 0.2)",
+                    borderRadius: "7px",
+                    mb: 2,
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: "-100%",
+                      width: "100%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                      animation: "shimmer 2s infinite 1s",
+                    },
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    mt: "auto",
+                    display: "flex",
+                    gap: 1,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {Array.from({ length: 3 }, (_, btnIndex) => (
+                    <Box
+                      key={btnIndex}
+                      sx={{
+                        width: "32px",
+                        height: "32px",
+                        backgroundColor: "rgba(127, 140, 141, 0.15)",
+                        borderRadius: "50%",
+                        position: "relative",
+                        overflow: "hidden",
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          top: 0,
+                          left: "-100%",
+                          width: "100%",
+                          height: "100%",
+                          background:
+                            "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                          animation: `shimmer 2s infinite ${
+                            1.5 + btnIndex * 0.2
+                          }s`,
+                        },
+                      }}
+                    />
+                  ))}
+                  <Box
+                    sx={{
+                      width: "80px",
+                      height: "32px",
+                      backgroundColor: "rgba(127, 140, 141, 0.15)",
+                      borderRadius: "16px",
+                      position: "relative",
+                      overflow: "hidden",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: "-100%",
+                        width: "100%",
+                        height: "100%",
+                        background:
+                          "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                        animation: "shimmer 2s infinite 2.1s",
+                      },
+                    }}
+                  />
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        ) : cards.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
               p: 8,
               textAlign: "center",
-              background: "rgba(255, 255, 255, 0.95)",
+              background: "rgba(52, 73, 94, 0.95)",
               backdropFilter: "blur(20px)",
               borderRadius: 4,
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "white",
             }}
           >
             <BookmarkBorder
               sx={{
                 fontSize: 120,
-                color: "#667eea",
+                color: "#7f8c8d",
                 mb: 3,
                 opacity: 0.6,
               }}
@@ -860,7 +1032,9 @@ const CardsList: React.FC = () => {
               color="text.secondary"
               sx={{ mb: 4, fontWeight: 300 }}
             >
-              最初のカードを追加して、後で読みたい記事を保存しましょう！
+              最初のカードを追加して、後で読みたい記事を保存・整理しましょう！
+              <br />
+              タグ機能で記事を分類できます。
             </Typography>
             <Button
               variant="contained"
@@ -871,12 +1045,12 @@ const CardsList: React.FC = () => {
                 borderRadius: 3,
                 px: 4,
                 py: 1.5,
-                background: "linear-gradient(45deg, #667eea, #764ba2)",
+                background: "linear-gradient(45deg, #7f8c8d, #34495e)",
                 boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
                 fontSize: "1.1rem",
                 "&:hover": {
-                  background: "linear-gradient(45deg, #5a6fd8, #6a4190)",
-                  boxShadow: "0 12px 40px rgba(102, 126, 234, 0.4)",
+                  background: "linear-gradient(45deg, #95a5a6, #2c3e50)",
+                  boxShadow: "0 12px 40px rgba(127, 140, 141, 0.4)",
                 },
               }}
             >
@@ -915,13 +1089,13 @@ const CardsList: React.FC = () => {
             position: "fixed",
             bottom: { xs: 16, sm: 24 },
             right: { xs: 16, sm: 24 },
-            background: "linear-gradient(45deg, #667eea, #764ba2)",
-            boxShadow: "0 8px 32px rgba(102, 126, 234, 0.4)",
+            background: "linear-gradient(45deg, #7f8c8d, #34495e)",
+            boxShadow: "0 8px 32px rgba(127, 140, 141, 0.4)",
             width: { xs: 56, sm: 64 },
             height: { xs: 56, sm: 64 },
             "&:hover": {
-              background: "linear-gradient(45deg, #5a6fd8, #6a4190)",
-              boxShadow: "0 12px 40px rgba(102, 126, 234, 0.6)",
+              background: "linear-gradient(45deg, #95a5a6, #2c3e50)",
+              boxShadow: "0 12px 40px rgba(127, 140, 141, 0.6)",
               transform: "scale(1.1)",
             },
             transition: "all 0.3s ease",
@@ -954,7 +1128,7 @@ const CardsList: React.FC = () => {
             sx={{ px: 2, py: 1, borderBottom: "1px solid rgba(0, 0, 0, 0.1)" }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AccountCircle sx={{ color: "#667eea" }} />
+              <AccountCircle sx={{ color: "#7f8c8d" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 {getUserDisplayName()}
               </Typography>
@@ -1005,38 +1179,6 @@ const CardsList: React.FC = () => {
             },
           }}
         >
-          <DialogTitle
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              pb: 1,
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              新しいカードを追加
-            </Typography>
-            <IconButton
-              onClick={() => setShowAddModal(false)}
-              sx={{
-                color: "rgba(0, 0, 0, 0.5)",
-                "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.05)",
-                },
-              }}
-            >
-              <Close />
-            </IconButton>
-          </DialogTitle>
           <DialogContent sx={{ p: 0 }}>
             <AddCardForm
               onCardAdded={handleCardAdded}
@@ -1046,7 +1188,7 @@ const CardsList: React.FC = () => {
         </Dialog>
 
         {/* Tag Manager Dialog */}
-        <TagManagerDialog
+        <TagManager
           open={showTagManager}
           onClose={() => setShowTagManager(false)}
           onTagsUpdated={loadCards}

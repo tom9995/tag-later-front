@@ -43,7 +43,7 @@ export interface Collection {
 }
 
 export interface CreateCardData {
-  title: string;
+  title?: string;
   url?: string;
   description?: string;
   thumbnail_url?: string;
@@ -54,6 +54,7 @@ export interface CreateCardData {
   site_name?: string;
   author?: string;
   published_at?: string;
+  tag_ids?: string[];
 }
 
 export interface UpdateCardData {
@@ -68,6 +69,7 @@ export interface UpdateCardData {
   site_name?: string;
   author?: string;
   published_at?: string;
+  tag_ids?: string[];
 }
 
 export interface ApiResponse<T> {
@@ -260,10 +262,14 @@ class SupabaseApiService {
   async createCard(data: CreateCardData): Promise<ApiResponse<Card>> {
     try {
       const userId = await getCurrentUserId();
-      const { data: card, error } = await supabase
+
+      // カードを作成
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tag_ids: _, ...cardData } = data; // tag_idsを分離
+      const { data: card, error: cardError } = await supabase
         .from("cards")
         .insert({
-          ...data,
+          ...cardData,
           user_id: userId,
           is_read: data.is_read || false,
           is_favorite: data.is_favorite || false,
@@ -271,14 +277,58 @@ class SupabaseApiService {
         .select()
         .single();
 
-      if (error) {
-        throw error;
+      if (cardError) {
+        throw cardError;
       }
+
+      // タグを紐づけ
+      if (data.tag_ids && data.tag_ids.length > 0) {
+        const cardTagInserts = data.tag_ids.map((tagId) => ({
+          card_id: card.id,
+          tag_id: tagId,
+        }));
+
+        const { error: tagError } = await supabase
+          .from("card_tags")
+          .insert(cardTagInserts);
+
+        if (tagError) {
+          console.error("Error linking tags to card:", tagError);
+          // タグの紐づけに失敗してもカード作成は成功として扱う
+        }
+      }
+
+      // 作成されたカードをタグ情報付きで取得
+      const { data: cardWithTags, error: fetchError } = await supabase
+        .from("cards")
+        .select(
+          `
+          *,
+          tags:card_tags(
+            tag:tags(*)
+          )
+        `
+        )
+        .eq("id", card.id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // データ変換
+      const transformedCard = {
+        ...cardWithTags,
+        tags:
+          cardWithTags.tags
+            ?.map((ct: { tag: Tag }) => ct.tag)
+            .filter(Boolean) || [],
+      };
 
       return {
         success: true,
         message: "Card created successfully",
-        data: { ...card, tags: [], collections: [] },
+        data: transformedCard,
       };
     } catch (error) {
       console.error("Error creating card:", error);
@@ -291,24 +341,84 @@ class SupabaseApiService {
     data: UpdateCardData
   ): Promise<ApiResponse<Card>> {
     try {
-      const { data: card, error } = await supabase
+      // カード情報を更新
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tag_ids: _, ...cardData } = data; // tag_idsを分離
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { data: updatedCard, error: cardError } = await supabase
         .from("cards")
         .update({
-          ...data,
+          ...cardData,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
         .select()
         .single();
 
-      if (error) {
-        throw error;
+      if (cardError) {
+        throw cardError;
       }
+
+      // タグ情報が含まれている場合、タグの紐づけを更新
+      if (data.tag_ids !== undefined) {
+        // 既存のタグ紐づけを削除
+        const { error: deleteError } = await supabase
+          .from("card_tags")
+          .delete()
+          .eq("card_id", id);
+
+        if (deleteError) {
+          console.error("Error deleting existing card tags:", deleteError);
+        }
+
+        // 新しいタグ紐づけを追加
+        if (data.tag_ids.length > 0) {
+          const cardTagInserts = data.tag_ids.map((tagId) => ({
+            card_id: id,
+            tag_id: tagId,
+          }));
+
+          const { error: insertError } = await supabase
+            .from("card_tags")
+            .insert(cardTagInserts);
+
+          if (insertError) {
+            console.error("Error inserting new card tags:", insertError);
+          }
+        }
+      }
+
+      // 更新されたカードをタグ情報付きで取得
+      const { data: cardWithTags, error: fetchError } = await supabase
+        .from("cards")
+        .select(
+          `
+          *,
+          tags:card_tags(
+            tag:tags(*)
+          )
+        `
+        )
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // データ変換
+      const transformedCard = {
+        ...cardWithTags,
+        tags:
+          cardWithTags.tags
+            ?.map((ct: { tag: Tag }) => ct.tag)
+            .filter(Boolean) || [],
+      };
 
       return {
         success: true,
         message: "Card updated successfully",
-        data: { ...card, tags: [], collections: [] },
+        data: transformedCard,
       };
     } catch (error) {
       console.error("Error updating card:", error);

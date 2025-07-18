@@ -58,8 +58,8 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      setError("タイトルは必須項目です");
+    if (!formData.title?.trim() && !formData.url?.trim()) {
+      setError("URLまたはタイトルのどちらかを入力してください");
       return;
     }
 
@@ -69,9 +69,10 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
     try {
       const response = await apiService.createCard({
         ...formData,
-        title: formData.title.trim(),
+        title: formData.title?.trim() || undefined,
         url: formData.url?.trim() || undefined,
         description: formData.description?.trim() || undefined,
+        tag_ids: selectedTags.map((tag) => tag.id),
       });
 
       if (response.success) {
@@ -141,24 +142,10 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            mb: 4,
+            justifyContent: "flex-end",
+            mb: 2,
           }}
         >
-          <Typography
-            variant="h5"
-            component="h2"
-            sx={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontWeight: 700,
-              fontSize: "1.5rem",
-            }}
-          >
-            新しいカードを追加
-          </Typography>
           {onCancel && (
             <IconButton
               onClick={onCancel}
@@ -199,7 +186,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
             <TextField
               fullWidth
-              label="URL"
+              label="URL（必須）"
               type="url"
               value={formData.url || ""}
               onChange={handleInputChange("url")}
@@ -264,8 +251,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           {/* Title */}
           <TextField
             fullWidth
-            required
-            label="タイトル"
+            label="タイトル（オプション）"
             value={formData.title}
             onChange={handleInputChange("title")}
             placeholder="記事のタイトル"
@@ -373,6 +359,29 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
             getOptionLabel={(option) => option.name}
             value={selectedTags}
             onChange={(_, newValue) => setSelectedTags(newValue)}
+            renderOption={(props, option) => (
+              <Box
+                component="li"
+                {...props}
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    backgroundColor: option.color,
+                    flexShrink: 0,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{ color: option.color, fontWeight: 500 }}
+                >
+                  {option.name}
+                </Typography>
+              </Box>
+            )}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
                 <Chip
@@ -430,7 +439,16 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
         </Box>
       </CardContent>
 
-      <CardActions sx={{ px: 4, pb: 4, pt: 2 }}>
+      <CardActions
+        sx={{
+          px: 4,
+          pb: 4,
+          pt: 2,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
+        }}
+      >
         <Button
           type="submit"
           variant="contained"
@@ -439,7 +457,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
           startIcon={<Add />}
           onClick={handleSubmit}
           sx={{
-            mr: onCancel ? 2 : 0,
+            mr: { xs: 0, sm: onCancel ? 2 : 0 },
             height: "48px",
             borderRadius: "12px",
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -468,6 +486,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
             variant="outlined"
             onClick={onCancel}
             disabled={isSubmitting}
+            fullWidth
             sx={{
               height: "48px",
               borderRadius: "12px",
@@ -476,6 +495,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
               fontSize: "1rem",
               fontWeight: 500,
               textTransform: "none",
+              whiteSpace: "nowrap",
               "&:hover": {
                 borderColor: "#667eea",
                 backgroundColor: "rgba(103, 126, 234, 0.05)",
