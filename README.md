@@ -226,9 +226,7 @@ npm run export
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── about/             # About ページ
-│   ├── cards/             # カード一覧ページ
-│   ├── home/              # ホームページ
+│   ├── home/              # ホームページ（メインのカード一覧）
 │   ├── login/             # ログインページ
 │   └── signup/            # サインアップページ
 ├── components/            # 再利用可能なコンポーネント
