@@ -53,6 +53,7 @@ const CardsList: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [cards, setCards] = useState<CardType[]>([]);
+  const [allCards, setAllCards] = useState<CardType[]>([]); // 全体の統計用
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +80,20 @@ const CardsList: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const loadAllCards = async () => {
+    try {
+      const response = await apiService.getCards({
+        limit: 10000, // 大きな値で全体を取得
+      });
+
+      if (response.success) {
+        setAllCards(response.data.cards);
+      }
+    } catch (error) {
+      console.error("Failed to load all cards for stats:", error);
+    }
+  };
 
   const loadCards = async (isSearch = false) => {
     try {
@@ -116,10 +131,14 @@ const CardsList: React.FC = () => {
   useEffect(() => {
     const isInitialLoad = loading;
     loadCards(!isInitialLoad);
+    if (isInitialLoad) {
+      loadAllCards(); // 初回読み込み時のみ全体統計を取得
+    }
   }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCardAdded = (newCard: CardType) => {
     setCards((prev) => [newCard, ...prev]);
+    setAllCards((prev) => [newCard, ...prev]); // 全体統計も更新
     setShowAddModal(false);
   };
 
@@ -139,10 +158,16 @@ const CardsList: React.FC = () => {
         return prev.filter((card) => card.id !== updatedCard.id);
       }
     });
+
+    // 全体統計も更新
+    setAllCards((prev) =>
+      prev.map((card) => (card.id === updatedCard.id ? updatedCard : card))
+    );
   };
 
   const handleCardDeleted = (cardId: string) => {
     setCards((prev) => prev.filter((card) => card.id !== cardId));
+    setAllCards((prev) => prev.filter((card) => card.id !== cardId)); // 全体統計も更新
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,10 +227,10 @@ const CardsList: React.FC = () => {
   };
 
   const stats = {
-    total: cards.length,
-    read: cards.filter((card) => card.is_read).length,
-    unread: cards.filter((card) => !card.is_read).length,
-    favorites: cards.filter((card) => card.is_favorite).length,
+    total: allCards.length,
+    read: allCards.filter((card) => card.is_read).length,
+    unread: allCards.filter((card) => !card.is_read).length,
+    favorites: allCards.filter((card) => card.is_favorite).length,
   };
 
   return (
@@ -711,18 +736,18 @@ const CardsList: React.FC = () => {
                 <Select
                   value={
                     filters.is_read === undefined
-                      ? ""
+                      ? "all"
                       : filters.is_read.toString()
                   }
                   onChange={(e) =>
                     handleFilterChange(
                       "is_read",
-                      e.target.value === ""
+                      e.target.value === "all"
                         ? undefined
                         : e.target.value === "true"
                     )
                   }
-                  label="読書状況"
+                  label="状態"
                   sx={{
                     borderRadius: 3,
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
@@ -730,7 +755,7 @@ const CardsList: React.FC = () => {
                     },
                   }}
                 >
-                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="all">すべて</MenuItem>
                   <MenuItem value="false">未読</MenuItem>
                   <MenuItem value="true">既読</MenuItem>
                 </Select>
@@ -749,13 +774,13 @@ const CardsList: React.FC = () => {
                 <Select
                   value={
                     filters.is_favorite === undefined
-                      ? ""
+                      ? "all"
                       : filters.is_favorite.toString()
                   }
                   onChange={(e) =>
                     handleFilterChange(
                       "is_favorite",
-                      e.target.value === ""
+                      e.target.value === "all"
                         ? undefined
                         : e.target.value === "true"
                     )
@@ -768,7 +793,7 @@ const CardsList: React.FC = () => {
                     },
                   }}
                 >
-                  <MenuItem value="">すべて</MenuItem>
+                  <MenuItem value="all">すべて</MenuItem>
                   <MenuItem value="true">お気に入り</MenuItem>
                   <MenuItem value="false">通常</MenuItem>
                 </Select>
