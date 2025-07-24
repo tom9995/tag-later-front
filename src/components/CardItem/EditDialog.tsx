@@ -65,7 +65,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
   }, [open, card.title, card.description, card.tags]);
 
   const handleSave = () => {
-    onSave(editTitle.trim(), editDescription.trim(), selectedTags);
+    onSave(editTitle?.trim(), editDescription.trim(), selectedTags);
   };
 
   const handleClose = () => {
