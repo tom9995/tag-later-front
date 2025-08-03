@@ -66,7 +66,6 @@ function validateEnvironmentVariables() {
     return false;
   }
 
-  console.log("✅ Supabase environment variables validated successfully");
   return true;
 }
 

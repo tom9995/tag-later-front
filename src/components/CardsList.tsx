@@ -84,7 +84,7 @@ const CardsList: React.FC = () => {
   const loadAllCards = async () => {
     try {
       const response = await apiService.getCards({
-        limit: 10000, // 大きな値で全体を取得
+        limit: 10000,
       });
 
       if (response.success) {
