@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +21,7 @@ interface EditDialogProps {
   open: boolean;
   card: Card;
   onClose: () => void;
-  onSave: (title: string, description: string, tags?: Tag[]) => void;
+  onSave: (title: string, description: string, url: string, tags?: Tag[]) => void;
   isUpdating: boolean;
 }
 
@@ -35,17 +35,14 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [editTitle, setEditTitle] = useState(card.title);
+  const [editUrl, setEditUrl] = useState(card.url || "");
   const [editDescription, setEditDescription] = useState(
     card.description || ""
   );
   const [selectedTags, setSelectedTags] = useState<Tag[]>(card.tags || []);
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 
-  useEffect(() => {
-    loadTags();
-  }, []);
-
-  const loadTags = async () => {
+  const loadTags = useCallback(async () => {
     try {
       const response = await apiService.getTags();
       if (response.success) {
@@ -54,25 +51,30 @@ const EditDialog: React.FC<EditDialogProps> = ({
     } catch (error) {
       console.error("Failed to load tags:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
 
   useEffect(() => {
     if (open) {
       setEditTitle(card.title);
+      setEditUrl(card.url || "");
       setEditDescription(card.description || "");
       setSelectedTags(card.tags || []);
     }
-  }, [open, card.title, card.description, card.tags]);
+  }, [open, card.title, card.url, card.description, card.tags]);
 
-  const handleSave = () => {
-    onSave(editTitle?.trim(), editDescription.trim(), selectedTags);
-  };
+  const handleSave = useCallback(() => {
+    onSave(editTitle?.trim(), editDescription.trim(), editUrl.trim(), selectedTags);
+  }, [editTitle, editDescription, editUrl, selectedTags, onSave]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (!isUpdating) {
       onClose();
     }
-  };
+  }, [isUpdating, onClose]);
 
   return (
     <Dialog
@@ -114,6 +116,41 @@ const EditDialog: React.FC<EditDialogProps> = ({
             label="タイトル"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
+            disabled={isUpdating}
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                borderRadius: "12px",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(103, 126, 234, 0.5)",
+                  },
+                },
+                "&.Mui-focused": {
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#7f8c8d",
+                    borderWidth: "2px",
+                  },
+                },
+              },
+              "& .MuiInputLabel-root": {
+                color: "rgba(0, 0, 0, 0.7)",
+                "&.Mui-focused": {
+                  color: "#7f8c8d",
+                },
+              },
+            }}
+          />
+
+          <TextField
+            fullWidth
+            label="URL"
+            value={editUrl}
+            onChange={(e) => setEditUrl(e.target.value)}
             disabled={isUpdating}
             variant="outlined"
             sx={{
@@ -281,7 +318,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
           disabled={
             isUpdating ||
             (!(editTitle ? editTitle.trim() : "") &&
-              !(card ? card.url?.trim() : ""))
+              !(editUrl ? editUrl.trim() : ""))
           }
           variant="contained"
           sx={{

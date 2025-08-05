@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card as MuiCard,
   CardContent,
@@ -37,11 +37,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTags();
-  }, []);
-
-  const loadTags = async () => {
+  const loadTags = useCallback(async () => {
     try {
       const response = await apiService.getTags();
       if (response.success) {
@@ -53,9 +49,13 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
       console.error("Failed to load tags:", error);
       setAvailableTags([]); // エラー時は空の配列をセット
     }
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.title?.trim() && !formData.url?.trim()) {
@@ -94,9 +94,9 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, selectedTags, onCardAdded]);
 
-  const handleUrlParse = async () => {
+  const handleUrlParse = useCallback(async () => {
     if (!formData.url?.trim()) return;
 
     try {
@@ -108,9 +108,9 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData.url]);
 
-  const handleInputChange =
+  const handleInputChange = useCallback(
     (field: keyof CreateCardData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormData((prev) => ({
@@ -120,7 +120,9 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ onCardAdded, onCancel }) => {
             ? (e.target as HTMLInputElement).checked
             : e.target.value,
       }));
-    };
+    },
+    []
+  );
 
   return (
     <MuiCard

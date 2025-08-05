@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { CircularProgress, Box } from "@mui/material";
 
 interface ProtectedRouteProps {
@@ -13,11 +13,15 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const navigateToLogin = useCallback(() => {
+    router.push("/login");
+  }, [router]);
+
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      navigateToLogin();
     }
-  }, [user, loading, router]);
+  }, [user, loading, navigateToLogin]);
 
   if (loading) {
     return (

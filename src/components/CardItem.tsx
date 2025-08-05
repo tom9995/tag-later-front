@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Card as MuiCard,
   CardContent,
@@ -48,17 +48,17 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ja-JP", {
+  const formattedDate = useMemo(() => {
+    return new Date(card.saved_at).toLocaleDateString("ja-JP", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+  }, [card.saved_at]);
 
-  const handleToggleFavorite = async () => {
+  const handleToggleFavorite = useCallback(async () => {
     setIsUpdating(true);
     try {
       const updateData: UpdateCardData = {
@@ -74,9 +74,9 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [card.is_favorite, card.id, onUpdate]);
 
-  const handleToggleRead = async () => {
+  const handleToggleRead = useCallback(async () => {
     setIsUpdating(true);
     try {
       const updateData: UpdateCardData = {
@@ -92,53 +92,53 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [card.is_read, card.id, onUpdate]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     setIsEditing(true);
     setShowDeleteDialog(false); // 編集モーダルを開く際に削除ダイアログを閉じる
-  };
+  }, []);
 
-  const handleCloseEdit = () => {
+  const handleCloseEdit = useCallback(() => {
     setIsEditing(false);
-  };
+  }, []);
 
-  const handleSaveEdit = async (
-    title: string,
-    description: string,
-    tags?: Tag[]
-  ) => {
-    setIsUpdating(true);
-    try {
-      const updateData: UpdateCardData = {
-        title,
-        description: description || undefined,
-        tag_ids: tags?.map((tag) => tag.id) || [],
-      };
+  const handleSaveEdit = useCallback(
+    async (title: string, description: string, url: string, tags?: Tag[]) => {
+      setIsUpdating(true);
+      try {
+        const updateData: UpdateCardData = {
+          title,
+          url,
+          description: description || undefined,
+          tag_ids: tags?.map((tag) => tag.id) || [],
+        };
 
-      const response = await apiService.updateCard(card.id, updateData);
-      if (response.success) {
-        onUpdate(response.data);
-        setIsEditing(false);
-        setShowDeleteDialog(false); // 編集完了時に削除ダイアログが開いていれば閉じる
+        const response = await apiService.updateCard(card.id, updateData);
+        if (response.success) {
+          onUpdate(response.data);
+          setIsEditing(false);
+          setShowDeleteDialog(false); // 編集完了時に削除ダイアログが開いていれば閉じる
+        }
+      } catch (error) {
+        console.error("Failed to save edit:", error);
+      } finally {
+        setIsUpdating(false);
       }
-    } catch (error) {
-      console.error("Failed to save edit:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    },
+    [card.id, onUpdate]
+  );
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     setShowDeleteDialog(true);
     setIsEditing(false); // 削除ダイアログを開く際に編集モーダルを閉じる
-  };
+  }, []);
 
-  const handleCloseDeleteDialog = () => {
+  const handleCloseDeleteDialog = useCallback(() => {
     setShowDeleteDialog(false);
-  };
+  }, []);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     setIsDeleting(true);
     try {
       const response = await apiService.deleteCard(card.id);
@@ -151,7 +151,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [card.id, onDelete]);
 
   return (
     <>
@@ -346,7 +346,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
                   sx={{ fontSize: 16, color: "rgba(44, 62, 80, 0.6)" }}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  保存日: {formatDate(card.saved_at)}
+                  保存日: {formattedDate}
                 </Typography>
               </Box>
             </Box>

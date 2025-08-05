@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Container,
@@ -81,7 +81,7 @@ const CardsList: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const loadAllCards = async () => {
+  const loadAllCards = useCallback(async () => {
     try {
       const response = await apiService.getCards({
         limit: 10000,
@@ -93,40 +93,43 @@ const CardsList: React.FC = () => {
     } catch (error) {
       console.error("Failed to load all cards for stats:", error);
     }
-  };
+  }, []);
 
-  const loadCards = async (isSearch = false) => {
-    try {
-      if (isSearch) {
-        setSearchLoading(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
+  const loadCards = useCallback(
+    async (isSearch = false) => {
+      try {
+        if (isSearch) {
+          setSearchLoading(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
 
-      const response = await apiService.getCards({
-        ...filters,
-        search: filters.search || undefined,
-      });
+        const response = await apiService.getCards({
+          ...filters,
+          search: filters.search || undefined,
+        });
 
-      if (response.success) {
-        setCards(response.data.cards);
-      } else {
-        setError(response.error || "カードの取得に失敗しました");
+        if (response.success) {
+          setCards(response.data.cards);
+        } else {
+          setError(response.error || "カードの取得に失敗しました");
+          setCards([]);
+        }
+      } catch (error) {
+        console.error("Failed to load cards:", error);
+        setError("カード取得中にエラーが発生しました");
         setCards([]);
+      } finally {
+        if (isSearch) {
+          setSearchLoading(false);
+        } else {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Failed to load cards:", error);
-      setError("カード取得中にエラーが発生しました");
-      setCards([]);
-    } finally {
-      if (isSearch) {
-        setSearchLoading(false);
-      } else {
-        setLoading(false);
-      }
-    }
-  };
+    },
+    [filters]
+  );
 
   useEffect(() => {
     const isInitialLoad = loading;
@@ -134,54 +137,60 @@ const CardsList: React.FC = () => {
     if (isInitialLoad) {
       loadAllCards(); // 初回読み込み時のみ全体統計を取得
     }
-  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, loadCards, loadAllCards, loading]);
 
-  const handleCardAdded = (newCard: CardType) => {
+  const handleCardAdded = useCallback((newCard: CardType) => {
     setCards((prev) => [newCard, ...prev]);
     setAllCards((prev) => [newCard, ...prev]); // 全体統計も更新
     setShowAddModal(false);
-  };
+  }, []);
 
-  const handleCardUpdated = (updatedCard: CardType) => {
-    setCards((prev) => {
-      const shouldShowCard =
-        (filters.is_read === undefined ||
-          filters.is_read === updatedCard.is_read) &&
-        (filters.is_favorite === undefined ||
-          filters.is_favorite === updatedCard.is_favorite);
+  const handleCardUpdated = useCallback(
+    (updatedCard: CardType) => {
+      setCards((prev) => {
+        const shouldShowCard =
+          (filters.is_read === undefined ||
+            filters.is_read === updatedCard.is_read) &&
+          (filters.is_favorite === undefined ||
+            filters.is_favorite === updatedCard.is_favorite);
 
-      if (shouldShowCard) {
-        return prev.map((card) =>
-          card.id === updatedCard.id ? updatedCard : card
-        );
-      } else {
-        return prev.filter((card) => card.id !== updatedCard.id);
-      }
-    });
+        if (shouldShowCard) {
+          return prev.map((card) =>
+            card.id === updatedCard.id ? updatedCard : card
+          );
+        } else {
+          return prev.filter((card) => card.id !== updatedCard.id);
+        }
+      });
 
-    // 全体統計も更新
-    setAllCards((prev) =>
-      prev.map((card) => (card.id === updatedCard.id ? updatedCard : card))
-    );
-  };
+      // 全体統計も更新
+      setAllCards((prev) =>
+        prev.map((card) => (card.id === updatedCard.id ? updatedCard : card))
+      );
+    },
+    [filters.is_read, filters.is_favorite]
+  );
 
-  const handleCardDeleted = (cardId: string) => {
+  const handleCardDeleted = useCallback((cardId: string) => {
     setCards((prev) => prev.filter((card) => card.id !== cardId));
     setAllCards((prev) => prev.filter((card) => card.id !== cardId)); // 全体統計も更新
-  };
+  }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value);
+    },
+    []
+  );
 
-  const handleFilterChange = (
-    key: string,
-    value: string | boolean | undefined
-  ) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
+  const handleFilterChange = useCallback(
+    (key: string, value: string | boolean | undefined) => {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
     try {
       await signOut();
@@ -192,17 +201,20 @@ const CardsList: React.FC = () => {
       setIsLoggingOut(false);
       setUserMenuAnchor(null);
     }
-  };
+  }, [signOut]);
 
-  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setUserMenuAnchor(event.currentTarget);
-  };
+  const handleUserMenuOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setUserMenuAnchor(event.currentTarget);
+    },
+    []
+  );
 
-  const handleUserMenuClose = () => {
+  const handleUserMenuClose = useCallback(() => {
     setUserMenuAnchor(null);
-  };
+  }, []);
 
-  const getUserDisplayName = () => {
+  const getUserDisplayName = useMemo(() => {
     // XSS対策：HTMLエスケープとサニタイゼーション
     const safeName = user?.user_metadata?.name?.replace(
       /[<>&"']/g,
@@ -224,14 +236,17 @@ const CardsList: React.FC = () => {
         : "ユーザー";
 
     return displayName;
-  };
+  }, [user?.user_metadata?.name]);
 
-  const stats = {
-    total: allCards.length,
-    read: allCards.filter((card) => card.is_read).length,
-    unread: allCards.filter((card) => !card.is_read).length,
-    favorites: allCards.filter((card) => card.is_favorite).length,
-  };
+  const stats = useMemo(
+    () => ({
+      total: allCards.length,
+      read: allCards.filter((card) => card.is_read).length,
+      unread: allCards.filter((card) => !card.is_read).length,
+      favorites: allCards.filter((card) => card.is_favorite).length,
+    }),
+    [allCards]
+  );
 
   return (
     <Box
@@ -1155,7 +1170,7 @@ const CardsList: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <AccountCircle sx={{ color: "#7f8c8d" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {getUserDisplayName()}
+                {getUserDisplayName}
               </Typography>
             </Box>
             <Typography variant="caption" color="text.secondary">

@@ -20,7 +20,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 type HeaderProps = {
@@ -35,20 +35,20 @@ export default function Header({ title }: HeaderProps) {
   const [logoutDialog, setLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleMenuClose = () => {
+  const handleMenuClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
-  const handleLogoutClick = () => {
+  const handleLogoutClick = useCallback(() => {
     setLogoutDialog(true);
     handleMenuClose();
-  };
+  }, [handleMenuClose]);
 
-  const handleLogoutConfirm = async () => {
+  const handleLogoutConfirm = useCallback(async () => {
     setIsLoggingOut(true);
     try {
       await signOut();
@@ -59,25 +59,25 @@ export default function Header({ title }: HeaderProps) {
       setIsLoggingOut(false);
       setLogoutDialog(false);
     }
-  };
+  }, [signOut]);
 
-  const handleLogoutCancel = () => {
+  const handleLogoutCancel = useCallback(() => {
     setLogoutDialog(false);
-  };
+  }, []);
 
-  const getUserDisplayName = () => {
+  const getUserDisplayName = useMemo(() => {
     return user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
-  };
+  }, [user?.user_metadata?.name, user?.email]);
 
-  const getUserInitials = () => {
-    const name = getUserDisplayName();
+  const getUserInitials = useMemo(() => {
+    const name = getUserDisplayName;
     return name
       .split(" ")
       .map((word: string) => word[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
+  }, [getUserDisplayName]);
 
   return (
     <>
@@ -143,7 +143,7 @@ export default function Header({ title }: HeaderProps) {
                   fontWeight: 600,
                 }}
               >
-                {getUserInitials()}
+                {getUserInitials}
               </Avatar>
               <Typography
                 sx={{
@@ -151,7 +151,7 @@ export default function Header({ title }: HeaderProps) {
                   fontSize: "0.95rem",
                 }}
               >
-                {getUserDisplayName()}
+                {getUserDisplayName}
               </Typography>
               <AccountCircleIcon sx={{ opacity: 0.7 }} />
             </Box>
