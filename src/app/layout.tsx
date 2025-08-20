@@ -3,12 +3,6 @@
 import ClientThemeProvider from "./ClientThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-// 静的エクスポート用のメタデータはクライアントサイドでは無効
-// export const metadata = {
-//   title: "TagLater App",
-//   description: "Tag management application",
-// };
-
 export default function RootLayout({
   children,
 }: {
