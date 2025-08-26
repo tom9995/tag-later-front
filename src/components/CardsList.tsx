@@ -300,7 +300,6 @@ const CardsList: React.FC = () => {
       >
         <CardsListHeader
           user={user}
-          showAddModal={showAddModal}
           setShowAddModal={setShowAddModal}
           setShowTagManager={setShowTagManager}
           userMenuAnchor={userMenuAnchor}

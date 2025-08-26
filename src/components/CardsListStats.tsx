@@ -7,8 +7,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
   ExpandMore,
@@ -32,9 +30,6 @@ interface Stats {
 }
 
 const CardsListStats: React.FC<CardsListStatsProps> = ({ allCards }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   const stats: Stats = {
     total: allCards.length,
     read: allCards.filter((card) => card.is_read).length,

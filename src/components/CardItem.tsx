@@ -49,14 +49,14 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const formattedDate = useMemo(() => {
-    return new Date(card.saved_at).toLocaleDateString("ja-JP", {
+    return new Date(card.created_at).toLocaleDateString("ja-JP", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  }, [card.saved_at]);
+  }, [card.created_at]);
 
   const handleToggleFavorite = useCallback(async () => {
     setIsUpdating(true);

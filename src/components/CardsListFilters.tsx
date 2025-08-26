@@ -13,8 +13,6 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { Search, FilterList, ExpandMore } from "@mui/icons-material";
 
@@ -41,9 +39,6 @@ const CardsListFilters: React.FC<CardsListFiltersProps> = ({
   onSearchChange,
   onFilterChange,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   return (
     <Accordion
       elevation={0}

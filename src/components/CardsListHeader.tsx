@@ -8,8 +8,6 @@ import {
   Button,
   IconButton,
   Menu,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import {
   Add,
@@ -22,7 +20,6 @@ import { User } from "@supabase/supabase-js";
 
 interface CardsListHeaderProps {
   user: User | null;
-  showAddModal: boolean;
   setShowAddModal: (show: boolean) => void;
   setShowTagManager: (show: boolean) => void;
   userMenuAnchor: null | HTMLElement;
@@ -35,7 +32,6 @@ interface CardsListHeaderProps {
 
 const CardsListHeader: React.FC<CardsListHeaderProps> = ({
   user,
-  showAddModal,
   setShowAddModal,
   setShowTagManager,
   userMenuAnchor,
@@ -45,9 +41,6 @@ const CardsListHeader: React.FC<CardsListHeaderProps> = ({
   isLoggingOut,
   getUserDisplayName,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   return (
     <>
       {/* Modern Header */}
