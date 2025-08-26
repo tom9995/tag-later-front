@@ -8,45 +8,23 @@ import {
   Button,
   Box,
   Paper,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Fab,
   Collapse,
   Alert,
   CircularProgress,
   Dialog,
   DialogContent,
-  IconButton,
-  Menu,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import {
-  Add,
-  Search,
-  FilterList,
-  BookmarkBorder,
-  Visibility,
-  VisibilityOff,
-  Favorite,
-  Article,
-  LocalOffer,
-  Logout,
-  AccountCircle,
-  MoreVert,
-  ExpandMore,
-  BarChart,
-} from "@mui/icons-material";
+import { Add, BookmarkBorder } from "@mui/icons-material";
 import { Card as CardType, apiService } from "@/services/api";
 import CardItem from "@/components/CardItem";
 import AddCardForm from "@/components/AddCardForm";
 import TagManager from "@/components/TagManagerDialog";
+import CardsListHeader from "@/components/CardsListHeader";
+import CardsListStats from "@/components/CardsListStats";
+import CardsListFilters from "@/components/CardsListFilters";
 
 const CardsList: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -55,6 +33,7 @@ const CardsList: React.FC = () => {
   const [cards, setCards] = useState<CardType[]>([]);
   const [allCards, setAllCards] = useState<CardType[]>([]); // 全体の統計用
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
@@ -63,11 +42,13 @@ const CardsList: React.FC = () => {
     null
   );
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
     is_read: false as boolean | undefined, // デフォルトで未読のみを表示
     is_favorite: undefined as boolean | undefined,
-    sort_by: "saved_at",
+    sort_by: "created_at",
     sort_order: "desc" as "asc" | "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,10 +77,12 @@ const CardsList: React.FC = () => {
   }, []);
 
   const loadCards = useCallback(
-    async (isSearch = false) => {
+    async (isSearch = false, page = 1, append = false) => {
       try {
         if (isSearch) {
           setSearchLoading(true);
+        } else if (append) {
+          setLoadingMore(true);
         } else {
           setLoading(true);
         }
@@ -108,21 +91,46 @@ const CardsList: React.FC = () => {
         const response = await apiService.getCards({
           ...filters,
           search: filters.search || undefined,
+          page: page,
+          limit: 10,
         });
 
         if (response.success) {
-          setCards(response.data.cards);
+          const { cards: newCards, pagination } = response.data;
+
+          if (append) {
+            setCards((prevCards) => {
+              // 既存のカードIDのセットを作成
+              const existingIds = new Set(prevCards.map((card) => card.id));
+              // 重複を除いた新しいカードのみを追加
+              const uniqueNewCards = newCards.filter(
+                (card) => !existingIds.has(card.id)
+              );
+              return [...prevCards, ...uniqueNewCards];
+            });
+          } else {
+            setCards(newCards);
+            setCurrentPage(1);
+          }
+
+          setHasMorePages(pagination.current_page < pagination.total_pages);
         } else {
           setError(response.error || "カードの取得に失敗しました");
-          setCards([]);
+          if (!append) {
+            setCards([]);
+          }
         }
       } catch (error) {
         console.error("Failed to load cards:", error);
         setError("カード取得中にエラーが発生しました");
-        setCards([]);
+        if (!append) {
+          setCards([]);
+        }
       } finally {
         if (isSearch) {
           setSearchLoading(false);
+        } else if (append) {
+          setLoadingMore(false);
         } else {
           setLoading(false);
         }
@@ -133,7 +141,9 @@ const CardsList: React.FC = () => {
 
   useEffect(() => {
     const isInitialLoad = loading;
-    loadCards(!isInitialLoad);
+    setCurrentPage(1);
+    setHasMorePages(true);
+    loadCards(!isInitialLoad, 1, false);
     if (isInitialLoad) {
       loadAllCards(); // 初回読み込み時のみ全体統計を取得
     }
@@ -144,6 +154,43 @@ const CardsList: React.FC = () => {
     setAllCards((prev) => [newCard, ...prev]); // 全体統計も更新
     setShowAddModal(false);
   }, []);
+
+  const loadMoreCards = useCallback(() => {
+    if (!loadingMore && hasMorePages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      loadCards(false, nextPage, true);
+    }
+  }, [loadingMore, hasMorePages, currentPage, loadCards]);
+
+  // スクロールイベントハンドラー（スロットリング付き）
+  useEffect(() => {
+    let isScrolling = false;
+
+    const handleScroll = () => {
+      if (isScrolling) return;
+
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 // 1000px手前で読み込み開始
+      ) {
+        isScrolling = true;
+        loadMoreCards();
+
+        // 1秒後にスクロール制御を解除
+        setTimeout(() => {
+          isScrolling = false;
+        }, 1000);
+      }
+    };
+
+    const throttledHandleScroll = () => {
+      requestAnimationFrame(handleScroll);
+    };
+
+    window.addEventListener("scroll", throttledHandleScroll);
+    return () => window.removeEventListener("scroll", throttledHandleScroll);
+  }, [loadMoreCards]);
 
   const handleCardUpdated = useCallback(
     (updatedCard: CardType) => {
@@ -238,16 +285,6 @@ const CardsList: React.FC = () => {
     return displayName;
   }, [user?.user_metadata?.name]);
 
-  const stats = useMemo(
-    () => ({
-      total: allCards.length,
-      read: allCards.filter((card) => card.is_read).length,
-      unread: allCards.filter((card) => !card.is_read).length,
-      favorites: allCards.filter((card) => card.is_favorite).length,
-    }),
-    [allCards]
-  );
-
   return (
     <Box
       sx={{
@@ -261,595 +298,28 @@ const CardsList: React.FC = () => {
         maxWidth="lg"
         sx={{ pt: { xs: 1, sm: 2 }, px: { xs: 1, sm: 3 } }}
       >
-        {/* Modern Header */}
-        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-          <Paper
-            elevation={0}
-            sx={{
-              background: "rgb(244,246,247)",
-              backdropFilter: "blur(20px)",
-              borderRadius: 4,
-              p: { xs: 1.5, sm: 2.5 },
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              color: "white",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: { xs: "flex-start", sm: "center" },
-                flexDirection: { xs: "column", sm: "row" },
-                gap: { xs: 1.5, sm: 0 },
-                mb: { xs: 1.5, sm: 2 },
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h2"
-                  component="h1"
-                  sx={{
-                    fontWeight: 800,
-                    background: "linear-gradient(45deg, #2c3e50, #3498db)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    mb: 1,
-                    fontSize: { xs: "2rem", sm: "3rem" },
-                  }}
-                >
-                  TagLater
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: { xs: 1, sm: 2 },
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  width: { xs: "100%", sm: "auto" },
-                  justifyContent: { xs: "space-between", sm: "flex-end" },
-                }}
-              >
-                <Button
-                  variant="outlined"
-                  startIcon={<LocalOffer />}
-                  onClick={() => setShowTagManager(true)}
-                  sx={{
-                    borderRadius: 3,
-                    px: { xs: 2, sm: 3 },
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    borderColor: "#2c3e50",
-                    color: "#2c3e50",
-                    "&:hover": {
-                      borderColor: "#3498db",
-                      color: "#3498db",
-                      background: "rgba(52, 152, 219, 0.1)",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: { xs: "none", sm: "inline" } }}>
-                    タグ管理
-                  </Box>
-                  <Box sx={{ display: { xs: "inline", sm: "none" } }}>タグ</Box>
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setShowAddModal(true)}
-                  sx={{
-                    borderRadius: 3,
-                    px: { xs: 2, sm: 3 },
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    background: "linear-gradient(45deg, #3498db, #2c3e50)",
-                    boxShadow: "0 8px 32px rgba(52, 152, 219, 0.3)",
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #2980b9, #34495e)",
-                      boxShadow: "0 12px 40px rgba(52, 152, 219, 0.4)",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: { xs: "none", sm: "inline" } }}>
-                    新しいカードを追加
-                  </Box>
-                  <Box sx={{ display: { xs: "inline", sm: "none" } }}>追加</Box>
-                </Button>
-                {/* User Menu Icon */}
-                <IconButton
-                  onClick={handleUserMenuOpen}
-                  size="small"
-                  sx={{
-                    ml: { xs: 0, sm: 1 },
-                    color: "#7f8c8d",
-                    "&:hover": {
-                      backgroundColor: "rgba(127, 140, 141, 0.3)",
-                    },
-                  }}
-                >
-                  <MoreVert />
-                </IconButton>
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
+        <CardsListHeader
+          user={user}
+          showAddModal={showAddModal}
+          setShowAddModal={setShowAddModal}
+          setShowTagManager={setShowTagManager}
+          userMenuAnchor={userMenuAnchor}
+          handleUserMenuOpen={handleUserMenuOpen}
+          handleUserMenuClose={handleUserMenuClose}
+          handleLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          getUserDisplayName={getUserDisplayName}
+        />
 
-        {/* Modern Stats Dashboard */}
-        <Accordion
-          elevation={0}
-          sx={{
-            mb: 4,
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "16px !important",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            "&:before": {
-              display: "none",
-            },
-            "& .MuiAccordionSummary-root": {
-              borderRadius: "16px",
-              "&.Mui-expanded": {
-                borderBottomLeftRadius: 0,
-                borderBottomRightRadius: 0,
-              },
-            },
-            "& .MuiAccordionDetails-root": {
-              borderBottomLeftRadius: "16px",
-              borderBottomRightRadius: "16px",
-            },
-          }}
-        >
-          <AccordionSummary
-            expandIcon={
-              <ExpandMore
-                sx={{
-                  color: "#7f8c8d",
-                  fontSize: { xs: 20, sm: 24 },
-                }}
-              />
-            }
-            sx={{
-              p: { xs: 2, sm: 3 },
-              "& .MuiAccordionSummary-content": {
-                margin: "8px 0",
-              },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <BarChart
-                sx={{ color: "#7f8c8d", fontSize: { xs: 20, sm: 24 } }}
-              />
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  color: "#333",
-                  fontSize: { xs: "1rem", sm: "1.25rem" },
-                }}
-              >
-                統計情報
-              </Typography>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(4, 1fr)",
-                },
-                gap: { xs: 2, sm: 3 },
-              }}
-            >
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 3,
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(135deg, #7f8c8d 0%, #34495e 100%)",
-                  color: "white",
-                  boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 1,
-                    fontSize: { xs: "1.5rem", sm: "3rem" },
-                  }}
-                >
-                  {stats.total}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 0, sm: 1 },
-                  }}
-                >
-                  <Article
-                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
-                  />
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: { xs: "0.75rem", sm: "1rem" },
-                      textAlign: "center",
-                    }}
-                  >
-                    総カード数
-                  </Typography>
-                </Box>
-              </Box>
+        <CardsListStats allCards={allCards} />
 
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 3,
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
-                  color: "white",
-                  boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 1,
-                    fontSize: { xs: "1.5rem", sm: "3rem" },
-                  }}
-                >
-                  {stats.read}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 0, sm: 1 },
-                  }}
-                >
-                  <Visibility
-                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
-                  />
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: { xs: "0.75rem", sm: "1rem" },
-                      textAlign: "center",
-                    }}
-                  >
-                    既読
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 3,
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                  color: "white",
-                  boxShadow: "0 8px 32px rgba(79, 172, 254, 0.3)",
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 1,
-                    fontSize: { xs: "1.5rem", sm: "3rem" },
-                  }}
-                >
-                  {stats.unread}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 0, sm: 1 },
-                  }}
-                >
-                  <VisibilityOff
-                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
-                  />
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: { xs: "0.75rem", sm: "1rem" },
-                      textAlign: "center",
-                    }}
-                  >
-                    未読
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 3,
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                  color: "white",
-                  boxShadow: "0 8px 32px rgba(250, 112, 154, 0.3)",
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 1,
-                    fontSize: { xs: "1.5rem", sm: "3rem" },
-                  }}
-                >
-                  {stats.favorites}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: { xs: 0, sm: 1 },
-                  }}
-                >
-                  <Favorite
-                    sx={{ mr: { xs: 0, sm: 1 }, fontSize: { xs: 16, sm: 24 } }}
-                  />
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: { xs: "0.75rem", sm: "1rem" },
-                      textAlign: "center",
-                    }}
-                  >
-                    お気に入り
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-
-        {/* Modern Filters */}
-        <Accordion
-          elevation={0}
-          sx={{
-            mb: 4,
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "16px !important",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            "&:before": {
-              display: "none",
-            },
-            "& .MuiAccordionSummary-root": {
-              borderRadius: "16px",
-              "&.Mui-expanded": {
-                borderBottomLeftRadius: 0,
-                borderBottomRightRadius: 0,
-              },
-            },
-            "& .MuiAccordionDetails-root": {
-              borderBottomLeftRadius: "16px",
-              borderBottomRightRadius: "16px",
-            },
-          }}
-        >
-          <AccordionSummary
-            expandIcon={
-              <ExpandMore
-                sx={{
-                  color: "#7f8c8d",
-                  fontSize: { xs: 20, sm: 24 },
-                }}
-              />
-            }
-            sx={{
-              p: { xs: 2, sm: 3 },
-              "& .MuiAccordionSummary-content": {
-                margin: "8px 0",
-              },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <FilterList
-                sx={{ color: "#7f8c8d", fontSize: { xs: 20, sm: 24 } }}
-              />
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  color: "#333",
-                  fontSize: { xs: "1rem", sm: "1.25rem" },
-                }}
-              >
-                フィルター & 検索
-              </Typography>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 0 }}>
-            <Box
-              sx={{
-                display: "flex",
-                gap: { xs: 2, sm: 3 },
-                flexWrap: "wrap",
-                alignItems: "center",
-                flexDirection: { xs: "column", sm: "row" },
-              }}
-            >
-              {/* Search */}
-              <TextField
-                label="検索"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                placeholder="検索"
-                InputProps={{
-                  startAdornment: searchLoading ? (
-                    <CircularProgress
-                      size={20}
-                      sx={{
-                        mr: 1,
-                        color: "#7f8c8d",
-                        animation: "pulse 1.5s ease-in-out infinite",
-                        "@keyframes pulse": {
-                          "0%, 100%": {
-                            opacity: 1,
-                          },
-                          "50%": {
-                            opacity: 0.6,
-                          },
-                        },
-                      }}
-                    />
-                  ) : (
-                    <Search sx={{ mr: 1, color: "#7f8c8d" }} />
-                  ),
-                }}
-                sx={{
-                  width: { xs: "100%", sm: 280 },
-                  minWidth: { xs: "100%", sm: 280 },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 3,
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#7f8c8d",
-                    },
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#7f8c8d",
-                  },
-                }}
-              />
-
-              {/* Read Status */}
-              <FormControl
-                sx={{
-                  width: { xs: "100%", sm: 160 },
-                  minWidth: { xs: "100%", sm: 160 },
-                }}
-              >
-                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
-                  状態
-                </InputLabel>
-                <Select
-                  value={
-                    filters.is_read === undefined
-                      ? "all"
-                      : filters.is_read.toString()
-                  }
-                  onChange={(e) =>
-                    handleFilterChange(
-                      "is_read",
-                      e.target.value === "all"
-                        ? undefined
-                        : e.target.value === "true"
-                    )
-                  }
-                  label="状態"
-                  sx={{
-                    borderRadius: 3,
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#7f8c8d",
-                    },
-                  }}
-                >
-                  <MenuItem value="all">すべて</MenuItem>
-                  <MenuItem value="false">未読</MenuItem>
-                  <MenuItem value="true">既読</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Favorite Status */}
-              <FormControl
-                sx={{
-                  width: { xs: "100%", sm: 160 },
-                  minWidth: { xs: "100%", sm: 160 },
-                }}
-              >
-                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
-                  お気に入り
-                </InputLabel>
-                <Select
-                  value={
-                    filters.is_favorite === undefined
-                      ? "all"
-                      : filters.is_favorite.toString()
-                  }
-                  onChange={(e) =>
-                    handleFilterChange(
-                      "is_favorite",
-                      e.target.value === "all"
-                        ? undefined
-                        : e.target.value === "true"
-                    )
-                  }
-                  label="お気に入り"
-                  sx={{
-                    borderRadius: 3,
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#7f8c8d",
-                    },
-                  }}
-                >
-                  <MenuItem value="all">すべて</MenuItem>
-                  <MenuItem value="true">お気に入り</MenuItem>
-                  <MenuItem value="false">通常</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Sort */}
-              <FormControl
-                sx={{
-                  width: { xs: "100%", sm: 200 },
-                  minWidth: { xs: "100%", sm: 200 },
-                }}
-              >
-                <InputLabel sx={{ "&.Mui-focused": { color: "#7f8c8d" } }}>
-                  並び順
-                </InputLabel>
-                <Select
-                  value={`${filters.sort_by}_${filters.sort_order}`}
-                  onChange={(e) => {
-                    const [sort_by, sort_order] = e.target.value.split("_");
-                    handleFilterChange("sort_by", sort_by);
-                    handleFilterChange("sort_order", sort_order);
-                  }}
-                  label="並び順"
-                  sx={{
-                    borderRadius: 3,
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#7f8c8d",
-                    },
-                  }}
-                >
-                  <MenuItem value="saved_at_desc">
-                    保存日時（新しい順）
-                  </MenuItem>
-                  <MenuItem value="saved_at_asc">保存日時（古い順）</MenuItem>
-                  <MenuItem value="title_asc">タイトル（A-Z）</MenuItem>
-                  <MenuItem value="title_desc">タイトル（Z-A）</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </AccordionDetails>
-        </Accordion>
+        <CardsListFilters
+          searchTerm={searchTerm}
+          searchLoading={searchLoading}
+          filters={filters}
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+        />
 
         {/* Error Message */}
         <Collapse in={!!error}>
@@ -1055,47 +525,82 @@ const CardsList: React.FC = () => {
             <BookmarkBorder
               sx={{
                 fontSize: 120,
-                color: "#7f8c8d",
+                color: "#fdffffff",
                 mb: 3,
                 opacity: 0.6,
               }}
             />
-            <Typography
-              variant="h4"
-              gutterBottom
-              sx={{ fontWeight: 600, color: "#333" }}
-            >
-              まだカードがありません
-            </Typography>
-            <Typography
-              variant="h6"
-              color="text.secondary"
-              sx={{ mb: 4, fontWeight: 300 }}
-            >
-              最初のカードを追加して、後で読みたい記事を保存・整理しましょう！
-              <br />
-              タグ機能で記事を分類できます。
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => setShowAddModal(true)}
-              size="large"
-              sx={{
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                background: "linear-gradient(45deg, #7f8c8d, #34495e)",
-                boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
-                fontSize: "1.1rem",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #95a5a6, #2c3e50)",
-                  boxShadow: "0 12px 40px rgba(127, 140, 141, 0.4)",
-                },
-              }}
-            >
-              最初のカードを追加
-            </Button>
+            {/* 検索やフィルターが適用されているかチェック */}
+            {searchTerm.trim() !== "" ||
+            filters.search !== "" ||
+            filters.is_read !== false ||
+            filters.is_favorite !== undefined ? (
+              <>
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{ fontWeight: 600, color: "#fdffffff" }}
+                >
+                  検索結果: 0件
+                </Typography>
+                <Typography
+                  variant="h6"
+                  color="text.secondary"
+                  sx={{ mb: 4, fontWeight: 300, color: "#fdffffff" }}
+                >
+                  条件に一致するカードが見つかりませんでした。
+                  <br />
+                  検索キーワードやフィルター条件を変更してみてください。
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Typography
+                  variant="h4"
+                  gutterBottom
+                  sx={{ fontWeight: 600, color: "#fdffffff" }}
+                >
+                  まだカードがありません
+                </Typography>
+                <Typography
+                  variant="h6"
+                  color="text.secondary"
+                  sx={{ mb: 4, fontWeight: 300, color: "#fdffffff" }}
+                >
+                  最初のカードを追加して、後で読みたい記事を保存・整理しましょう！
+                  <br />
+                  タグ機能で記事を分類できます。
+                </Typography>
+              </>
+            )}
+            {/* カードが全くない場合のみ追加ボタンを表示 */}
+            {!(
+              searchTerm.trim() !== "" ||
+              filters.search !== "" ||
+              filters.is_read !== false ||
+              filters.is_favorite !== undefined
+            ) && (
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setShowAddModal(true)}
+                size="large"
+                sx={{
+                  borderRadius: 3,
+                  px: 4,
+                  py: 1.5,
+                  background: "linear-gradient(45deg, #7f8c8d, #34495e)",
+                  boxShadow: "0 8px 32px rgba(102, 126, 234, 0.3)",
+                  fontSize: "1.1rem",
+                  "&:hover": {
+                    background: "linear-gradient(45deg, #95a5a6, #2c3e50)",
+                    boxShadow: "0 12px 40px rgba(127, 140, 141, 0.4)",
+                  },
+                }}
+              >
+                最初のカードを追加
+              </Button>
+            )}
           </Paper>
         ) : (
           <Box
@@ -1118,6 +623,35 @@ const CardsList: React.FC = () => {
                 onDelete={handleCardDeleted}
               />
             ))}
+          </Box>
+        )}
+
+        {/* 追加読み込み中の表示 */}
+        {loadingMore && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 4,
+              mb: 4,
+            }}
+          >
+            <CircularProgress
+              size={40}
+              sx={{
+                color: "#7f8c8d",
+              }}
+            />
+            <Typography
+              variant="body2"
+              sx={{
+                ml: 2,
+                color: "text.secondary",
+              }}
+            >
+              さらに読み込み中...
+            </Typography>
           </Box>
         )}
 
@@ -1144,61 +678,6 @@ const CardsList: React.FC = () => {
         >
           <Add sx={{ fontSize: { xs: 24, sm: 30 } }} />
         </Fab>
-
-        {/* User Menu */}
-        <Menu
-          anchorEl={userMenuAnchor}
-          open={Boolean(userMenuAnchor)}
-          onClose={handleUserMenuClose}
-          PaperProps={{
-            sx: {
-              mt: 1,
-              borderRadius: "12px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              minWidth: "200px",
-            },
-          }}
-          transformOrigin={{ horizontal: "right", vertical: "top" }}
-          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-        >
-          <Box
-            sx={{ px: 2, py: 1, borderBottom: "1px solid rgba(0, 0, 0, 0.1)" }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AccountCircle sx={{ color: "#7f8c8d" }} />
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {getUserDisplayName}
-              </Typography>
-            </Box>
-            <Typography variant="caption" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-          <Box sx={{ p: 1 }}>
-            <Button
-              fullWidth
-              startIcon={<Logout />}
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              sx={{
-                justifyContent: "flex-start",
-                color: "#f44336",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "rgba(244, 67, 54, 0.05)",
-                },
-                "&:disabled": {
-                  color: "rgba(0, 0, 0, 0.26)",
-                },
-              }}
-            >
-              {isLoggingOut ? "ログアウト中..." : "ログアウト"}
-            </Button>
-          </Box>
-        </Menu>
 
         {/* Add Card Modal */}
         <Dialog

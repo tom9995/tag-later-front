@@ -14,7 +14,7 @@ export interface Card {
   site_name?: string;
   author?: string;
   published_at?: string;
-  saved_at: string;
+  created_at: string;
   read_at?: string;
   updated_at: string;
   tags?: Tag[];
@@ -149,7 +149,17 @@ class SupabaseApiService {
       // ソート適用
       const sortBy = params?.sort_by || "created_at";
       const sortOrder = params?.sort_order || "desc";
-      query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+      // データベースのカラム名にマッピング
+      const dbColumnMap: { [key: string]: string } = {
+        created_at: "created_at",
+        saved_at: "created_at", // 互換性のため
+        title: "title",
+        updated_at: "updated_at",
+      };
+
+      const dbColumn = dbColumnMap[sortBy] || "created_at";
+      query = query.order(dbColumn, { ascending: sortOrder === "asc" });
 
       // ページネーション適用
       query = query.range(offset, offset + limit - 1);
@@ -631,7 +641,7 @@ export async function fetchBookmarks(): Promise<Bookmark[]> {
       url: card.url,
       description: card.description || "",
       tags: card.tags || [],
-      created: card.saved_at,
+      created: card.created_at,
       modified: card.updated_at,
     }));
   } catch (error) {
