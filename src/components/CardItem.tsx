@@ -294,6 +294,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onUpdate, onDelete }) => {
                   WebkitLineClamp: 3,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
+                  maxWidth: "80vw",
                 }}
               >
                 {card.description}
