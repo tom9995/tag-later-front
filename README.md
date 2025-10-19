@@ -100,7 +100,6 @@ npm run dev
 - **Supabase**: オープンソースの Firebase 代替
 - **PostgreSQL**: 高性能なリレーショナルデータベース
 - **Supabase Auth**: セキュアな認証システム
-- **Real-time subscriptions**: リアルタイムデータ更新
 
 ### 開発・デプロイ
 
@@ -237,43 +236,6 @@ src/
 ├── hooks/                 # カスタムフック
 └── services/              # API サービス
 ```
-
-### 開発のベストプラクティス
-
-- **型安全性**: TypeScript を活用した厳密な型定義
-- **コンポーネント分割**: 再利用性と保守性を重視したモジュラー設計
-- **エラーハンドリング**: 適切なエラー処理とユーザーフィードバック
-- **パフォーマンス**: React の最適化機能を活用した高速レンダリング
-
-### 今後の開発予定
-
-- [ ] URL 自動解析機能の実装
-- [ ] コレクション機能の追加
-- [ ] エクスポート/インポート機能
-- [ ] PWA 対応
-- [ ] ダークモード
-- [ ] 多言語対応
-
-## 🤝 コントリビューション
-
-プロジェクトへの貢献を歓迎します！以下の手順でコントリビューションをお願いします：
-
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/AmazingFeature`)
-3. 変更をコミット (`git commit -m 'Add some AmazingFeature'`)
-4. ブランチをプッシュ (`git push origin feature/AmazingFeature`)
-5. プルリクエストを作成
-
-## 📝 ライセンス
-
-このプロジェクトは MIT ライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルを参照してください。
-
-## 📞 サポート
-
-質問や問題がある場合は、以下の方法でお気軽にお問い合わせください：
-
-- GitHub Issues: [Issues ページ](https://github.com/tom9995/tag-later-front/issues)
-- 開発者: [@tom9995](https://github.com/tom9995)
 
 ---
 
